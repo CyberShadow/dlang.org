@@ -1409,7 +1409,7 @@ $(GNAME AssertExpression):
         evaluate assert expressions at all.
         The result type of an assert expression is $(D void).
         Asserts are a fundamental part of the
-        $(LINK2 $(WEB dbc.html)$(EBOOK #Contract Programming), Contract Programming)
+        $(LINK2 dbc.html$(EBOOK #Contract Programming), Contract Programming)
         support in D.
         )
 
