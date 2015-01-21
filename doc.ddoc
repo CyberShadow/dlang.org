@@ -64,7 +64,7 @@ $(DIVID top,
 )
 $(DIVID mobile-top,
     $(DIVID mobile-header,
-        <!-- <div id="mobile-search-button" class="fa fa-search"></div> -->
+        <div id="mobile-search-button" class="fa fa-search"></div>
         <div id="mobile-hamburger" class="fa fa-bars"></div>
         $(DIVID mobile-title,
             <img id='mobile-logo' width="50" height="38" border="0" alt="D Logo" src="http://dlang.org/images/dlogo.png">

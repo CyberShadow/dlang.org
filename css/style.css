@@ -370,13 +370,13 @@ td .d_code2, td .cppcode2, td .cppcode
 
 div#top
 {
-    position: relative;
+	position: relative;
 /* 	max-width: 85em; */
 }
 
 div#header
 {
-    margin: 0.875em;
+	margin: 0.875em;
 }
 
 img#logo
@@ -406,78 +406,78 @@ img#github-ribbon
 div#search-box
 {
 	position: absolute;
-    bottom: 0em;
+	bottom: 0em;
 	right: 1em;
 	z-index: 2;
-    white-space: nowrap;
+	white-space: nowrap;
 }
 
 div#search-query, div#search-dropdown, div#search-submit
 {
-    display: inline-block;
-    vertical-align: top;
-    background: #F6F6F6;
-    border: 1px solid #aaa;
-    line-height: 1.3em;
-    height: 1.4em;
+	display: inline-block;
+	vertical-align: top;
+	background: #F6F6F6;
+	border: 1px solid #aaa;
+	line-height: 1.3em;
+	height: 1.4em;
 }
 
 div#search-query input, div#search-dropdown select, div#search-submit button
 {
-    background: transparent;
-    border: none;
-    margin: 0;
-    padding: 0 0.5em;
-    width: 100%;
-    height: 100%;
-    outline: none;
+	background: transparent;
+	border: none;
+	margin: 0;
+	padding: 0 0.5em;
+	width: 100%;
+	height: 100%;
+	outline: none;
 }
 
 div#search-query
 {
-    -webkit-border-radius: 5px 0 0 5px;
-    -moz-border-radius: 5px 0 0 5px;
-    border-radius: 5px 0 0 5px;
+	-webkit-border-radius: 5px 0 0 5px;
+	-moz-border-radius: 5px 0 0 5px;
+	border-radius: 5px 0 0 5px;
 }
 
 div#search-dropdown
 {
-    position: relative;
-    border-right: none;
-    border-left: none;
-    width: 8em;
-    overflow: hidden;
+	position: relative;
+	border-right: none;
+	border-left: none;
+	width: 8em;
+	overflow: hidden;
 }
 
 div#search-dropdown select
 {
-    position: relative;
-    width: 12em;
-    z-index: 1;
+	position: relative;
+	width: 12em;
+	z-index: 1;
 }
 
 div#search-dropdown:after{
-    content: "\f107";
-    font-family: FontAwesome;
-    font-style: normal;
-    font-weight: normal;
-    text-decoration: inherit;
-    position: absolute;
-    height: 10px;
-    width: 20px;
-    top: 50%;
-    margin-top: -0.6em;
-    right: 0.5em;
-    z-index: 0;
+	content: "\f107";
+	font-family: FontAwesome;
+	font-style: normal;
+	font-weight: normal;
+	text-decoration: inherit;
+	position: absolute;
+	height: 10px;
+	width: 20px;
+	top: 50%;
+	margin-top: -0.6em;
+	right: 0.5em;
+	z-index: 0;
 }
 
 div#search-submit
 {
-    line-height: 1.5em;
-    -moz-border-radius: 0 5px 5px 0;
-    -webkit-border-radius: 0 5px 5px 0;
-    border-radius: 0 5px 5px 0;
-    line-height: 1.2em;
+	line-height: 1.5em;
+	-moz-border-radius: 0 5px 5px 0;
+	-webkit-border-radius: 0 5px 5px 0;
+	border-radius: 0 5px 5px 0;
+	line-height: 1.2em;
 }
 
 
@@ -491,7 +491,7 @@ div#navigation
 
 div#content
 {
-    text-align: justify;
+	text-align: justify;
 	min-height: 440px;
 	margin-left: 13.5em;
 	padding: 1.6em;
@@ -502,9 +502,9 @@ div#content
 	font-size: 0.875em;
 	line-height: 1.4em;
 	text-align: justify;
-    -moz-border-radius: 5px;
-    -webkit-border-radius: 5px;
-    border-radius: 5px;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
 }
 
 body.chm
@@ -1003,20 +1003,20 @@ input.runButton:active, input.resetButton:active, input.argsButton:active, input
 input.resetButton{display: none}
 /* Runnable-examples css -end */
 
-div#mobile-top {
+div#mobile-top, div#mobile-search {
 	display: none;
 }
 
 @media only screen and (max-width: 1024px) {
-    
-    div#twitter{
-        display: none !important;
-    }
-    
-    div#content{
-        margin-right: 1em !important;
-    }
-    
+	
+	div#twitter{
+		display: none !important;
+	}
+	
+	div#content{
+		margin-right: 1em !important;
+	}
+	
 }
 
 @media only screen and (max-width: 800px) {
@@ -1038,7 +1038,7 @@ div#mobile-top {
 	div#mobile-top {
 		display: block;
 		padding: 5px 0;
-        padding-bottom: 10px;
+		padding-bottom: 10px;
 
 		background: -moz-linear-gradient(#555 0%, #333 100%);
 		background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #555), color-stop(100%, #333));
@@ -1053,8 +1053,7 @@ div#mobile-top {
 
 	div#mobile-hamburger {
 		float: left;
-        padding-left: 10px;
-        margin-right: -1.5em;
+		padding-left: 10px;
 	}
 
 	div#mobile-search-button, div#mobile-hamburger {
@@ -1093,10 +1092,10 @@ div#mobile-top {
 
 	div#search-box
 	{
-        position: relative;
-        text-align: center;
+		position: static;
+		text-align: center;
 		margin: 10px 0;
-        z-index: 1000;
+		z-index: 1000;
 	}
 
 	/* Navigation */
@@ -1113,15 +1112,15 @@ div#mobile-top {
 		-webkit-box-shadow: 10px 0px 20px black;
 		box-shadow: 10px 0px 20px black;
 		z-index: 10001;
-        overflow: auto; /*needs to scroll if content bigger than screen*/
-        -moz-transition: left 0.5s;
-        -webkit-transition: left 0.5s;
-        transition: left 0.5s;
+		overflow: auto; /*needs to scroll if content bigger than screen*/
+		-moz-transition: left 0.5s;
+		-webkit-transition: left 0.5s;
+		transition: left 0.5s;
 	}
-    
-    div#navigation.open{
-        left: -1em;
-    }
+
+	div#navigation.open{
+		left: -1em;
+	}
 
 	div#navigation-cancel {
 		position: absolute;

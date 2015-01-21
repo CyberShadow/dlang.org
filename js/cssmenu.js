@@ -50,10 +50,9 @@ $(function() {
     }
     updateSearchBox();
     
-	/*$('#mobile-search-button').click(function() {
-		$('#mobile-search').append($searchBox.detach());
+	$('#mobile-search-button').click(function() {
 		$('#mobile-search').slideToggle();
-	});*/
+	});
 	$('#mobile-hamburger').click(function() {
 		var duration = 500;
 		$("#navigation").addClass('open');
