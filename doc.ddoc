@@ -47,13 +47,13 @@ $(DIVID top,
         <form method="get" action="http://google.com/search">
             <input type="hidden" id="domains" name="domains" value="dlang.org" />
             <input type="hidden" id="sourceid" name="sourceid" value="google-search" />
-            <div id="search-query"><input id="q" name="q" /></div>$(DIVID search-dropdown,
+            $(DIVID search-query, <input id="q" name="q" />)$(DIVID search-dropdown,
                 <select id="sitesearch" name="sitesearch" size="1">
                     <option value="dlang.org">Entire D Site</option>
                     <option value="dlang.org/phobos">Library Reference</option>
                     <option value="digitalmars.com/d/archives">Newsgroup Archives</option>
                 </select>
-            )<div id="search-submit"><button type="submit"><i class="fa fa-search"></i></button></div>
+            )$(DIVID search-submit, <button type="submit"><i class="fa fa-search"></i></button>)
         </form>
     )
     $(DIVID header,

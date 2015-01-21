@@ -466,7 +466,7 @@ div#search-dropdown:after{
 	height: 10px;
 	width: 20px;
 	top: 50%;
-	margin-top: -0.6em;
+	margin-top: -0.5em;
 	right: 0.5em;
 	z-index: 0;
 }
@@ -1094,7 +1094,7 @@ div#mobile-top, div#mobile-search {
 	{
 		position: static;
 		text-align: center;
-		margin: 10px 0;
+		margin-top: 10px;
 		z-index: 1000;
 	}
 
@@ -1132,6 +1132,9 @@ div#mobile-top, div#mobile-search {
 	/* Content */
 
 	div#content {
+		-moz-border-radius: 0;
+		-webkit-border-radius: 0;
+		border-radius: 0;
 		margin-left: 0;
 		margin-right: 0 !important /* override inline style! */;
 	}
