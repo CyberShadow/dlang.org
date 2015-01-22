@@ -1118,7 +1118,7 @@ div#mobile-top, div#mobile-search {
 	}
 
 	div#navigation.open{
-		left: -1em;
+		left: 0;
 	}
 
 	div#navigation-cancel {
