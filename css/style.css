@@ -450,7 +450,8 @@ div#search-dropdown
 	position: relative;
 	border-right: none;
 	border-left: none;
-	width: 8em;
+	max-width: 8em;
+	width: 40%;
 	overflow: hidden;
 }
 
@@ -474,7 +475,6 @@ div#search-dropdown:after{
 
 div#search-submit
 {
-	line-height: 1.5em;
 	-moz-border-radius: 0 5px 5px 0;
 	-webkit-border-radius: 0 5px 5px 0;
 	border-radius: 0 5px 5px 0;
@@ -1054,8 +1054,7 @@ div#mobile-top, div#mobile-search {
 
 	div#mobile-top {
 		display: block;
-		padding: 5px 0;
-		padding-bottom: 10px;
+		padding: 7px 0;
 
 		background: -moz-linear-gradient(#555 0%, #333 100%);
 		background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #555), color-stop(100%, #333));
@@ -1065,18 +1064,19 @@ div#mobile-top, div#mobile-search {
 
 	div#mobile-search-button {
 		float: right;
-		padding-right: 10px;
+		padding-right: 15px;
 	}
 
 	div#mobile-hamburger {
 		float: left;
-		padding-left: 10px;
+		padding-left: 15px;
 	}
 
 	div#mobile-search-button, div#mobile-hamburger {
 		color: #aaa;
 		font-size: 1.7em;
 		cursor: pointer;
+		padding-top: 6px;
 	}
 
 	div#mobile-title {
@@ -1092,6 +1092,7 @@ div#mobile-top, div#mobile-search {
 		height: 38px;
 		max-width: 50%;
 		vertical-align: middle;
+		line-height: 1.0;
 	}
 
 	div#mobile-d-language a {
@@ -1112,6 +1113,10 @@ div#mobile-top, div#mobile-search {
 		position: static;
 		text-align: center;
 		margin-top: 10px;
+	}
+
+	div#search-query {
+		width: 40%;
 	}
 
 	/* Navigation */
