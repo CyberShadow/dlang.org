@@ -378,6 +378,8 @@ div#top
 div#header
 {
 	margin: 0.875em;
+	margin-top: 0;
+	padding-top: 0.875em;;
 }
 
 img#logo
@@ -400,7 +402,7 @@ img#logo
 img#github-ribbon
 {
   position: absolute;
-  top: 0;
+  top: -15px;
   right: 0;
   border: 0;
   z-index: 1;
@@ -460,18 +462,14 @@ div#search-dropdown select
 }
 
 div#search-dropdown:after{
-	content: "\f107";
+	content: "\f107"; /* angle down */
 	font-family: FontAwesome;
-	font-style: normal;
-	font-weight: normal;
-	text-decoration: inherit;
 	position: absolute;
 	height: 10px;
 	width: 20px;
 	top: 50%;
 	margin-top: -0.5em;
-	right: 0.5em;
-	z-index: 0;
+	right: 0.2em;
 }
 
 div#search-submit
@@ -1030,8 +1028,8 @@ div#mobile-top, div#mobile-search {
 
 @media only screen and (max-width: 1024px) {
 	
-	div#twitter{
-		display: none !important;
+	div#news{
+		display: none;
 	}
 	
 	div#content{
@@ -1131,7 +1129,7 @@ div#mobile-top, div#mobile-search {
 		-webkit-box-shadow: 10px 0px 20px black;
 		box-shadow: 10px 0px 20px black;
 		z-index: 10001;
-		overflow: auto; /*needs to scroll if content bigger than screen*/
+		overflow: auto; /* scroll if navigation is taller than content and window */
 		-moz-transition: left 0.5s;
 		-webkit-transition: left 0.5s;
 		transition: left 0.5s;
@@ -1160,5 +1158,9 @@ div#mobile-top, div#mobile-search {
 
 	pre {
 		font-size: 1em;
+	}
+
+	img#github-ribbon {
+		display: none;
 	}
 }

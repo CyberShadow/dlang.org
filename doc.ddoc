@@ -47,7 +47,7 @@ $(DIVID top,
         <form method="get" action="http://google.com/search">
             <input type="hidden" id="domains" name="domains" value="dlang.org" />
             <input type="hidden" id="sourceid" name="sourceid" value="google-search" />
-            $(DIVID search-query, <input id="q" name="q" />)$(DIVID search-dropdown,
+            $(DIVID search-query, <input id="q" name="q" placeholder="Search" />)$(DIVID search-dropdown,
                 <select id="sitesearch" name="sitesearch" size="1">
                     <option value="dlang.org">Entire D Site</option>
                     <option value="dlang.org/phobos">Library Reference</option>
