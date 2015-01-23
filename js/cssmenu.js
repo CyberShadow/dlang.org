@@ -36,20 +36,24 @@ $('#cssmenu > ul > li > a').click(function() {
 });
 
 $(function() {
-    var $searchBox = $('#search-box');
-    
-    // quick fix, could be done with html+css change
-    $(window).on('resize', updateSearchBox);
-    
-    function updateSearchBox(){
-        if($('#mobile-title').is(':visible')){
-            $('#mobile-search').append($searchBox.detach());
-        }else{
-            $('#top').append($searchBox.detach());
-        }
-    }
-    updateSearchBox();
-    
+	var $searchBox = $('#search-box');
+	var $mobileTitle = $('#mobile-title');
+	var $mobileSearch = $('#mobile-search');
+	var $top = $('#top');
+
+	// move search box in mobile mode, 
+	// could be done with html+css change
+	$(window).on('resize', updateSearchBox);
+
+	function updateSearchBox(){
+		if($mobileTitle.is(':visible')){
+			if(!$mobileSearch.has($searchBox).length > 0) $mobileSearch.append($searchBox.detach());
+		}else{
+			if(!$top.has($searchBox).length > 0) $top.append($searchBox.detach());
+		}
+	}
+	updateSearchBox();
+
 	$('#mobile-search-button').click(function() {
 		$('#mobile-search').slideToggle();
 	});
