@@ -1111,7 +1111,6 @@ div#mobile-top, div#mobile-search {
 		position: static;
 		text-align: center;
 		margin-top: 10px;
-		z-index: 1000;
 	}
 
 	/* Navigation */
