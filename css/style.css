@@ -503,6 +503,7 @@ div#content
 	font-size: 0.875em;
 	line-height: 1.4em;
 	text-align: justify;
+	border: 3px solid #ccd5d5;
 	-moz-border-radius: 5px;
 	-webkit-border-radius: 5px;
 	border-radius: 5px;
