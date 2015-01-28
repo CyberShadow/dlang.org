@@ -1,11 +1,9 @@
 // D HTML to CHM converter/generator
-// By Vladimir Panteleev <vladimir@thecybershadow.net> (2007-2011)
+// By Vladimir Panteleev <vladimir@thecybershadow.net> (2007-2015)
 // Placed in the Public Domain
 // Written in the D Programming Language, version 2
 
 import std.algorithm;
-//import std.array;
-//import std.ascii;
 import std.exception;
 import std.file;
 import std.range;
@@ -13,8 +11,6 @@ import std.stdio : File, stderr;
 import std.string;
 import std.regex;
 import std.path;
-
-//alias std.ascii.newline newline;
 
 enum ROOT = `.`;
 
@@ -24,30 +20,6 @@ string fixSlashes(string s)
 {
 	return s.replace(`/`, `\`);
 }
-
-/*
-bool contains(string s, string sub) { return s.indexOf(sub) >= 0; }
-
-RegexMatch!string match;
-
-bool test(string line, Regex!char re)
-{
-	match = std.regex.match(line, re);
-	return !match.empty;
-}
-
-string getAnchor(string s)
-{
-	int i = s.indexOf('#');
-	return i<0 ? "" : s[i..$];
-}
-
-string stripAnchor(string s)
-{
-	int i = s.indexOf('#');
-	return i<0 ? s : s[0..i];
-}
-*/
 
 string getAnchor(string s)
 {
@@ -82,52 +54,18 @@ string absoluteUrl(string base, string url)
 	return (pathSegments ~ urlSegments).join(`\`);
 }
 
-/*
-string adjustPath(string s)
-{
-	if (s.startsWith(ROOT ~ `/`))
-		s = "chm" ~ s[ROOT.length..$];
-	return s;
-}
-*/
 string adjustPath(string s, string prefix)
 {
 	enforce(s.startsWith(ROOT ~ `\`), "Bad path: " ~ s);
 	return prefix ~ s[ROOT.length..$];
 }
-/*
-bool ignoreNav(string href)
-{
-	return
-		href=="bugstats.php" ||
-		href=="sitemap.html" ||
-		href.contains("://");
-}
-*/
+
 // ********************************************************************
 
 class Nav
 {
 	string title, url;
 	Nav[] children;
-
-	this(string title, string url)
-	{
-		this.title = title;
-		this.url   = url;
-	}
-/*
-	Nav findOrAdd(string title, string url)
-	{
-		title = title.strip();
-		foreach (child; children)
-			if (child.title == title)
-				return child;
-		auto child = new Nav(title, url);
-		children ~= child;
-		return child;
-	}
-*/
 }
 
 class Page
@@ -165,11 +103,11 @@ Nav loadNav(string fileName, string base)
 		else
 		{
 			auto obj = json.object;
-			auto title = obj["t"].str.strip();
-			string url;
+			auto nav = new Nav;
+			nav.title = obj["t"].str.strip();
 			if ("a" in obj)
 			{
-				url = absoluteUrl(base, obj["a"].str.strip());
+				auto url = absoluteUrl(base, obj["a"].str.strip());
 				if (url.canFind(`://`))
 				{
 					stderr.writeln("Skipping external navigation item: " ~ url);
@@ -183,9 +121,9 @@ Nav loadNav(string fileName, string base)
 					return null;
 				}
 				else
-					url = `files\` ~ url;
+					nav.url = `files\` ~ url;
 			}
-			return new Nav(title, url);
+			return nav;
 		}
 	}
 
@@ -243,24 +181,7 @@ void main()
 		only(ROOT ~ `\favicon.ico`)
 	).array();
 
-/*
-	auto re_title        = regex(`<title>(.*) - (The )?D Programming Language( [0-9]\.[0-9])? - Digital Mars</title>`);
-	auto re_title2       = regex(`<title>(Digital Mars - The )?D Programming Language( [0-9]\.[0-9])? - (.*)</title>`);
-	auto re_title3       = regex(`<h1>(.*)</h1>`);
-	auto re_heading      = regex(`<h2>(.*)</h2>`);
-	auto re_heading_link = regex(`<h2><a href="([^"]*)"( title="([^"]*)")?>(.*)</a></h2>`);
-	auto re_nav_link     = regex(`<li><a href="([^"]*)"( title="(.*)")?>(.*)</a>`);
-	auto re_anchor_1     = regex(`<a name="\.?([^"]*)">(<\w{1,2}>)*([^<]+)<`);
-	auto re_anchor_1h    = regex(`<a name="\.?([^"]*)"`);
-	auto re_link         = regex(`<a href="([^"]*)">(<\w{1,2}>)*([^<]+)<`);
-	auto re_link_pl      = regex(`<li><a href="(http://www.digitalmars.com/d)?/?(\d\.\d)?/index.html" title="D Programming Language \d\.\d">`);
-	auto re_def          = regex(`<dt><big>(.*)<u>([^<]+)<`);
-	auto re_css_margin   = regex(`margin-left:\s*1[35]em;`);
-	auto re_res_path     = regex(`<(img|script) src="/([^/])`);
-	auto re_extern_js    = regex(`<script src=['"]((https?:)?//[^'"]+)['"]`);
-*/
 	foreach (fileName; files)
-		//with (pages[fileName] = new Page)
 		{
 			scope(failure) stderr.writeln("Error while processing file: ", fileName);
 			auto page = pages[fileName] = new Page;
@@ -273,20 +194,6 @@ void main()
 			{
 				stderr.writeln("Processing ", fileName);
 				auto lines = fileName.readText().splitLines();
-//				string[] newlines = null;
-//				bool skip, innavblock, intoctop;
-//				int dl = 0;
-//				anchors[""] = true;
-
-			//	Nav[] navStack = [nav];
-			//	if (fileName.startsWith(ROOT ~ `\phobos\`))
-			//	{
-			//		navStack ~= navStack[$-1].findOrAdd("Documentation", null);
-			//		navStack ~= navStack[$-1].findOrAdd("Library Reference", `files\phobos\index.html`);
-			//		navStack ~= navStack[$-1].findOrAdd(null, null);
-			//	}
-			//	else
-			//		navStack ~= null;
 
 				bool foundBody, redirect;
 
@@ -294,112 +201,12 @@ void main()
 				{
 					scope(failure) stderr.writeln("Error while processing line: ", line);
 
-					// Fix links
-
-					line = line.replace(`<a href="."`, `<a href="index.html"`);
-					line = line.replace(`<a href=".."`, `<a href="..\index.html"`);
-
-				//	string line = origLine;
-				//	bool nextSkip = skip;
-
-				//	if (line.test(re_link_pl))
-				//		continue; // don't process link as well
-
-				//	if (line.test(re_title))
-				//	{
-				//		title = strip(/*re_title*/match.captures[1]);
-				//		line = line.replace(re_title, `<title>` ~ title ~ `</title>`);
-				//	}
-				//	if (line.test(re_title2))
-				//	{
-				//		title = strip(/*re_title2*/match.captures[3]);
-				//		line = line.replace(re_title2, `<title>` ~ title ~ `</title>`);
-				//	}
-				//	if (line.test(re_title3))
-				//		if (title=="")
-				//			title = strip(/*re_title2*/match.captures[1]);
-
 					RegexMatch!string m;
 
 					// Find title
 
 					if (!!(m = line.match(re!`^<title>(.*) - D Programming Language</title>$`)))
 						page.title = m.captures[1];
-
-				//	if (line.test(re_anchor_1h))
-				//	{
-				//		auto anchor = '#' ~ /*re_anchor*/match.captures[1];
-				//		anchors[anchor] = true;
-				//	}
-				//	else
-				//	if (line.test(re_anchor_2h))
-				//	{
-				//		auto anchor = '#' ~ /*re_anchor_2*/match.captures[1];
-				//		anchors[anchor] = true;
-				//	}
-
-				//	if (line.contains(`<div id="navigation"`))
-				//		innavblock = true;
-				//	else
-				//	if (line.contains(`<!--/navigation-->`))
-				//		innavblock = false;
-				//	if (line.contains(`<div id="toctop"`))
-				//		intoctop = true;
-				//	else
-				//	if (intoctop && line.contains(`</div>`))
-				//		intoctop = false;
-
-				/+
-					if (innavblock && !intoctop)
-					{
-						if (line.contains("<ul>"))
-							navStack ~= null;
-						else
-						if (line.contains("</ul>"))
-							navStack = navStack[0..$-1];
-
-						void doLink(string title, string url)
-						{
-							if (ignoreNav(url))
-								return;
-							if (url)
-							{
-								url = absoluteUrl(fileName, url);
-								if (url == fileName)
-									foundNav = true;
-								url = url.adjustPath();
-							}
-							navStack[$-1] = navStack[$-2].findOrAdd(title, url);
-						}
-
-						if (line.test(re_heading_link))
-							doLink(match.captures[4], match.captures[1]);
-						else
-						if (line.test(re_heading))
-							doLink(match.captures[1], null);
-						else
-						if (line.test(re_nav_link))
-							doLink(match.captures[4], match.captures[1]);
-					}
-
-					if (line.contains(`<dl>`))
-						dl++;
-					if (dl==1)
-					{
-						if (line.test(re_def))
-						{
-							auto anchor = /*re_def*/match.captures[2];
-							while ("#"~anchor in anchors) anchor ~= '_';
-							anchors["#"~anchor] = true;
-							//line = match.pre ~ line.replace(re_def, `<dt><big>$1<u><a name="` ~ anchor ~ `">$2</a><`) ~ match.post;
-							line = line.replace(re_def, `<dt><big>$1<u><a name="` ~ anchor ~ `">$2</a><`);
-							//writeln("new line: ", line);
-							addKeyword(/*re_def*/match.captures[2], fileName ~ "#" ~ anchor);
-						}
-					}
-					if (line.contains(`</dl>`))
-						dl--;
-				+/
 
 					// Add document CSS class
 
@@ -411,6 +218,11 @@ void main()
 
 					if (line.match(re!`^<meta http-equiv="Refresh" content="0; URL=`))
 						redirect = true;
+
+					// Fix links
+
+					line = line.replace(`<a href="."`, `<a href="index.html"`);
+					line = line.replace(`<a href=".."`, `<a href="..\index.html"`);
 
 					// Find anchors
 
@@ -439,81 +251,13 @@ void main()
 
 					if (line.startsWith(`<link rel="stylesheet" href="http`))
 						line = null;
-
-				/+
-					while (!skip && line.test(re_extern_js))
-					{
-						auto url = match.captures[1].replace(`\`, `/`);
-						auto fn = url.split("?")[0].split("/")[$-1];
-						auto dst = "chm/js/" ~ fn;
-
-						if (!dst.exists)
-						{
-							writefln("Downloading %s to %s...", url, dst);
-							import std.net.curl, etc.c.curl;
-							auto http = HTTP();
-							http.handle.set(CurlOption.ssl_verifypeer, false); // curl's default SSL trusted root certificate store is outdated/incomplete
-							if (!dst.dirName().exists) dst.dirName().mkdirRecurse();
-							std.file.write(dst, get(url, http));
-						}
-
-						line = line.replace(url, "/js/" ~ fn);
-					}
-
-					while (line.test(re_res_path))
-						line = line.replace(match.captures[0], `<` ~ match.captures[1] ~ ` src="` ~ "../".replicate(fileName[ROOT.length+1..$].split(dirSeparator).length-1) ~ match.captures[2]);
-					// skip Google ads
-					if (line.startsWith(`<!-- Google ad -->`))
-						skip = nextSkip = true;
-					if (line == `</script>`)
-						nextSkip = false;
-
-					// skip header / navigation bar
-					if (line.contains(`<body`))
-					{
-						line = `<body class="chm">`;
-						nextSkip = true;
-					}
-					if (line.contains(`<div id="content"`))
-						skip = nextSkip = false;
-
-					if (!skip)
-						newlines ~= line;
-					skip = nextSkip;
-
-					// Work around JS bug in run.js
-					if (line.contains(`<head`))
-						newlines ~= `<script>mainPage = [];</script>`;
-				+/
 				}
 
 				enforce(foundBody || redirect, "Body not found");
 
-			//	if (!foundNav)
-			//		stderr.writeln("Warning: Page not found in navigation");
-
-			//	src = join(newlines, std.ascii.newline[]);
 				page.src = lines.join("\r\n");
 				std.file.write(newFileName, page.src);
 			}
-		/*
-			else
-			if (fileName.endsWith(`.css`))
-			{
-				writeln("Processing "~fileName);
-				src = readText(fileName);
-				string[] lines = splitLines(src);
-				string[] newlines = null;
-				foreach (line;lines)
-				{
-					// skip #div.content positioning
-					if (!line.test(re_css_margin))
-						newlines ~= line;
-				}
-				src = join(newlines, std.ascii.newline[]);
-				std.file.write(newFileName, src);
-			}
-		*/
 			else
 			{
 				stderr.writeln("Copying ", fileName);
@@ -521,21 +265,24 @@ void main()
 			}
 		}
 
+	// Load navigation
+
 	auto nav = loadNav("chm-nav-doc.json", ``);
 	auto phobosIndex = `files\phobos\index.html`;
 	auto navPhobos = nav.children.find!(child => child.url == phobosIndex).front;
 	auto phobos = loadNav("chm-nav-std.json", `phobos\`);
 	navPhobos.children = phobos.children.filter!(child => child.url != phobosIndex).array();
 
-	// ************************************************************
+	// Retreive keyword link titles
 
-	// retreive keyword link titles
 	foreach (keyNorm, urls; keywords)
 		foreach (url, ref link; urls)
 			if (url in pages)
 				link.title = pages[url].title;
 
 	// ************************************************************
+
+	// Write project file
 
 	auto f = File(`chm\d.hhp`, "wt");
 	f.writeln(
@@ -568,6 +315,8 @@ main="D Programming Language","d.hhc","d.hhk","files\index.html","files\index.ht
 	f.close();
 
 	// ************************************************************
+
+	// Write TOC file
 
 	void dumpNav(Nav nav, int level=0)
 	{
@@ -604,6 +353,8 @@ main="D Programming Language","d.hhc","d.hhk","files\index.html","files\index.ht
 
 	// ************************************************************
 
+	// Write index file
+
 	string[] keywordList;
 	foreach (keyNorm, urlList; keywords)
 		keywordList ~= keyNorm;
@@ -634,4 +385,6 @@ main="D Programming Language","d.hhc","d.hhk","files\index.html","files\index.ht
 `</UL>
 </BODY></HTML>`);
 	f.close();
+
+	// Done!
 }
