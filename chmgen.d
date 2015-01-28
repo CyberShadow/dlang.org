@@ -23,7 +23,7 @@ class Nav
 	Nav[] children;
 }
 
-Nav loadNav(string fileName, string base)
+Nav loadNav(string fileName, string base, bool warn)
 {
 	import std.json;
 	auto text = fileName
@@ -61,7 +61,10 @@ Nav loadNav(string fileName, string base)
 				else
 				if (!exists(`chm/files/` ~ url))
 				{
-					stderr.writeln("Skipping non-existent navigation item: " ~ url);
+					if (warn)
+						stderr.writeln("Warning: Item in navigation does not exist: " ~ url);
+					else
+						stderr.writeln("Skipping non-existent navigation item: " ~ url);
 					//url = "http://dlang.org/" ~ url;
 					return null;
 				}
@@ -209,11 +212,10 @@ void main(string[] args)
 		keywordList ~= keyword;
 	keywordList.multiSort!(q{icmp(a, b) < 0}, q{a < b});
 
-	lint();
-
 	if (chm)
 	{
 		loadNavigation();
+		lint();
 		writeCHM();
 	}
 
@@ -228,10 +230,10 @@ void loadNavigation()
 {
 	stderr.writeln("Loading navigation");
 
-	nav = loadNav("chm-nav-doc.json", ``);
+	nav = loadNav("chm-nav-doc.json", ``, false);
 	auto phobosIndex = `files\phobos\index.html`;
 	auto navPhobos = nav.children.find!(child => child.url == phobosIndex).front;
-	auto phobos = loadNav("chm-nav-std.json", `phobos/`);
+	auto phobos = loadNav("chm-nav-std.json", `phobos/`, true);
 	navPhobos.children = phobos.children.filter!(child => child.url != phobosIndex).array();
 }
 
@@ -239,13 +241,40 @@ void loadNavigation()
 
 void lint()
 {
-	bool[string] unknownUrls;
-	foreach (keyword; keywordList)
-		foreach (url, link; keywords[keyword])
-			if (url !in pages)
-				unknownUrls[url] = true;
-	foreach (url; unknownUrls.keys.sort())
-		stderr.writeln("Warning: Unknown URL: " ~ url);
+	// Unknown URLs (links to pages we did not see)
+	{
+		bool[string] unknownUrls;
+		foreach (keyword; keywordList)
+			foreach (url, link; keywords[keyword])
+				if (url !in pages)
+					unknownUrls[url] = true;
+		foreach (url; unknownUrls.keys.sort())
+			stderr.writeln("Warning: Unknown URL: " ~ url);
+	}
+
+	// Pages not in navigation
+	{
+		bool[string] sawPage;
+
+		void visit(Nav nav)
+		{
+			if (nav.url)
+			{
+				auto url = nav.url
+					[6..$] // strip "files/"
+					.forwardSlashes();
+				sawPage[url] = true;
+			}
+			foreach (child; nav.children)
+				visit(child);
+		}
+
+		visit(nav);
+
+		foreach (url; pages.keys.sort())
+			if (url.endsWith(".html") && url !in sawPage)
+				stderr.writeln("Warning: Page not in navigation: " ~ url);
+	}
 }
 
 // ************************************************************
