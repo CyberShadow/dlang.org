@@ -82,11 +82,12 @@ Nav nav;
 
 // ********************************************************************
 
-struct KeyLink { string anchor; int confidence; }
+struct KeyLink { string anchor; int confidence; bool sawAnchor; }
 KeyLink[string][string] keywords;   // keywords[keyword][original url w/o anchor] = anchor/confidence
 string[] keywordList; // Sorted alphabetically, case-insensitive
+bool[string] sawAnchor;
 
-void addKeyword(string keyword, string link, int confidence)
+void addKeyword(string keyword, string link, int confidence, bool isAnchor = true)
 {
 	keyword = keyword.strip();
 	if (!keyword.length)
@@ -99,6 +100,14 @@ void addKeyword(string keyword, string link, int confidence)
 	 || file !in keywords[keyword]
 	 || keywords[keyword][file].confidence < confidence)
 		keywords[keyword][file] = KeyLink(anchor, confidence);
+
+	if (anchor.length)
+	{
+		if (link !in sawAnchor)
+			sawAnchor[link] = false;
+		if (isAnchor)
+			sawAnchor[link] = true;
+	}
 }
 
 class Page
@@ -184,7 +193,7 @@ void main(string[] args)
 
 			foreach (m; src.matchAll(re!(`<a `~attrs~`href="([^"]*)"`~attrs~`>(.*?)</a>`)))
 				if (!m.captures[1].canFind("://"))
-					addKeyword(m.captures[2].replaceAll(re!`<.*?>`, ``), absoluteUrl(fileName, m.captures[1]), 4);
+					addKeyword(m.captures[2].replaceAll(re!`<.*?>`, ``), absoluteUrl(fileName, m.captures[1]), 4, false);
 
 			// Disable scripts
 
@@ -243,13 +252,20 @@ void lint()
 {
 	// Unknown URLs (links to pages we did not see)
 	{
-		bool[string] unknownUrls;
+		bool[string] unknownPages;
 		foreach (keyword; keywordList)
-			foreach (url, link; keywords[keyword])
-				if (url !in pages)
-					unknownUrls[url] = true;
-		foreach (url; unknownUrls.keys.sort())
-			stderr.writeln("Warning: Unknown URL: " ~ url);
+			foreach (page, link; keywords[keyword])
+				if (page !in pages)
+					unknownPages[page] = true;
+		foreach (url; unknownPages.keys.sort())
+			stderr.writeln("Warning: Unknown page: " ~ url);
+	}
+
+	// Unknown anchors
+	{
+		foreach (url; sawAnchor.keys.sort())
+			if (!sawAnchor[url])
+				stderr.writeln("Warning: Link to unknown anchor: " ~ url);
 	}
 
 	// Pages not in navigation
