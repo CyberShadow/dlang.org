@@ -138,12 +138,6 @@ class Page
 struct KeyLink
 {
 	string anchor, title;
-
-	this(string anchor, string title)
-	{
-		this.anchor = anchor.strip();
-		this.title  = title.strip();
-	}
 }
 
 Nav loadNav(string fileName, string base)
@@ -204,26 +198,22 @@ Page[string] pages;
 KeyLink[string][string] keywords;   // keywords[keyword][original url w/o anchor] = anchor/title
 string[string] keyTable;
 
-void addKeyword(string keyword, string link, string title = null)
+void addKeyword(string keyword, string link)
 {
 	keyword = keyword.strip();
+	if (!keyword.length)
+		return;
+	link = link.strip();
 	string file = link.stripAnchor().fixSlashes();
 	string anchor = link.getAnchor();
 
-	if (!title && keyword in keywords && file in keywords[keyword])   // when title is present, it overrides any existing anchors/etc.
-	{
-		if (keywords[keyword][file].anchor > anchor) // "less" is better
-			keywords[keyword][file] = KeyLink(anchor, title);
-	}
-	else
-		keywords[keyword][file] = KeyLink(anchor, title);
+	if (keyword !in keywords
+	 || file !in keywords[keyword]
+	 || keywords[keyword][file].anchor > anchor) // "less" is better
+		keywords[keyword][file] = KeyLink(anchor);
 
-	if (title && keyword in keyTable)
-	{
-		if (keyTable[keyword] > keyword) // "less" is better
-			keyTable[keyword] = keyword;
-	}
-	else
+	if (keyword !in keyTable
+	 || keyTable[keyword] > keyword) // "less" is better
 		keyTable[keyword] = keyword;
 }
 
@@ -436,9 +426,9 @@ void main()
 					if (!!(m = line.match(re!(`<div class="quickindex" id="(quickindex\.(.+))"></div>`))))
 						addKeyword(m.captures[2], fileName ~ "#" ~ m.captures[1]);
 
-					if (!!(m = line.match(re!(`<a `~attrs~`href="([^"]*)"`~attrs~`>(<\w{1,2}>)*([^<]+)<`))))
+					if (!!(m = line.match(re!(`<a `~attrs~`href="([^"]*)"`~attrs~`>(.*?)</a>`))))
 						if (!m.captures[1].canFind("://"))
-							addKeyword(m.captures[3], absoluteUrl(fileName, m.captures[1]));
+							addKeyword(m.captures[2].replaceAll(re!`<.*?>`, ``), absoluteUrl(fileName, m.captures[1]));
 
 					// Disable scripts
 
