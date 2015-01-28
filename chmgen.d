@@ -71,7 +71,7 @@ string absoluteUrl(string base, string url)
 	if (url[0]=='#')
 		return base ~ url;
 
-	auto pathSegments = base.split(`\`)[0..$-1];
+	auto pathSegments = base.length ? base.split(`\`)[0..$-1] : null;
 	auto urlSegments = url.split(`\`);
 
 	while (urlSegments.startsWith([`..`]))
@@ -90,10 +90,10 @@ string adjustPath(string s)
 	return s;
 }
 */
-string adjustPath(string s)
+string adjustPath(string s, string prefix)
 {
 	enforce(s.startsWith(ROOT ~ `\`), "Bad path: " ~ s);
-	return `chm\files` ~ s[ROOT.length..$];
+	return prefix ~ s[ROOT.length..$];
 }
 /*
 bool ignoreNav(string href)
@@ -146,6 +146,52 @@ struct KeyLink
 	}
 }
 
+Nav loadNav(string fileName, string base)
+{
+	import std.json;
+	auto json = fileName
+		.readText()
+		.replace("\r", "")
+		.replace("\n", "")
+		.replaceAll(re!`,\s*\]`, "]")
+		.parseJSON();
+
+	Nav parseNav(JSONValue json)
+	{
+		if (json.type == JSON_TYPE.ARRAY)
+		{
+			auto nodes = json.array;
+			auto root = parseNav(nodes[0]);
+			root.children = nodes[1..$].map!parseNav.filter!`a`.array();
+			return root;
+		}
+		else
+		{
+			auto obj = json.object;
+			auto title = obj["t"].str.strip();
+			string url;
+			if ("a" in obj)
+			{
+				url = absoluteUrl(base, obj["a"].str.strip());
+				if (!url.canFind(`://`))
+				{
+					if (!exists(`chm\files\` ~ url))
+					{
+						stderr.writeln("Non-local or non-existing file in navigation: " ~ url);
+						//url = "http://dlang.org/" ~ url;
+						return null;
+					}
+					else
+						url = `files\` ~ url;
+				}
+			}
+			return new Nav(title, url);
+		}
+	}
+
+	return parseNav(json);
+}
+
 // ********************************************************************
 
 Page[string] pages;
@@ -186,6 +232,8 @@ Regex!char re(string pattern, alias flags = [])()
 
 void main()
 {
+	if (exists(`chm`))
+		rmdirRecurse(`chm`);
 	mkdirRecurse(`chm\files`);
 
 	enforce(exists(ROOT ~ `\phobos\index.html`),
@@ -216,8 +264,6 @@ void main()
 	auto re_res_path     = regex(`<(img|script) src="/([^/])`);
 	auto re_extern_js    = regex(`<script src=['"]((https?:)?//[^'"]+)['"]`);
 */
-	nav = new Nav(null, null);
-
 	foreach (fileName; files)
 		//with (pages[fileName] = new Page)
 		{
@@ -225,7 +271,7 @@ void main()
 			auto page = pages[fileName] = new Page;
 			page.fileName = fileName[ROOT.length+1 .. $];
 
-			auto newFileName = fileName.adjustPath();
+			auto newFileName = fileName.adjustPath(`chm\files`);
 			newFileName.dirName().mkdirRecurse();
 
 			if (fileName.endsWith(`.html`))
@@ -237,15 +283,15 @@ void main()
 //				int dl = 0;
 //				anchors[""] = true;
 
-				Nav[] navStack = [nav];
-				if (fileName.startsWith(ROOT ~ `\phobos\`))
-				{
-					navStack ~= navStack[$-1].findOrAdd("Documentation", null);
-					navStack ~= navStack[$-1].findOrAdd("Library Reference", `files\phobos\index.html`);
-					navStack ~= navStack[$-1].findOrAdd(null, null);
-				}
-				else
-					navStack ~= null;
+			//	Nav[] navStack = [nav];
+			//	if (fileName.startsWith(ROOT ~ `\phobos\`))
+			//	{
+			//		navStack ~= navStack[$-1].findOrAdd("Documentation", null);
+			//		navStack ~= navStack[$-1].findOrAdd("Library Reference", `files\phobos\index.html`);
+			//		navStack ~= navStack[$-1].findOrAdd(null, null);
+			//	}
+			//	else
+			//		navStack ~= null;
 
 				bool foundBody, redirect;
 
@@ -385,7 +431,7 @@ void main()
 
 					// Disable scripts
 
-					if (line.canFind(`<script`))
+					if (line.match(`<script.*</script>`) || line.match(`<script.*\bsrc=`))
 						line = null;
 
 				/+
@@ -468,6 +514,8 @@ void main()
 				copy(fileName, newFileName);
 			}
 		}
+
+	nav = loadNav("chm-nav-doc.json", ``);
 
 	// ************************************************************
 
@@ -567,7 +615,7 @@ main="D Programming Language","d.hhc","d.hhk","files\index.html","files\index.ht
 			{
 				f.writeln(
 `		<param name="Name" value="`, link.title, `">
-		<param name="Local" value="`, adjustPath(url), link.anchor, `">`);
+		<param name="Local" value="`, adjustPath(url, `files`), link.anchor, `">`);
 			}
 		f.writeln(
 `		</OBJECT>`);

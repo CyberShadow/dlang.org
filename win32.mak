@@ -282,13 +282,13 @@ dlangspec.mobi : dlangspec.opf dlangspec.html dlangspec.png dlangspec.ncx ebook.
 chm : d.chm
 
 chmgen.exe : chmgen.d
-	$(DMD) chmgen
+	$(DMD) -g chmgen
 
 chm\d.hhp chm\d.hhc chm\d.hhk : chmgen.exe chm-nav-doc.json chm-nav-std.json $(TARGETS)
 	chmgen
 
 d.chm : chm\d.hhp chm\d.hhc chm\d.hhk
-	cmd /C "cd chm && "$(HHC)" d.hhp"
+	-cmd /C "cd chm && "$(HHC)" d.hhp"
 	copy /Y chm\d.chm d.chm
 
 chm-nav-doc.json : $(DDOC) chm-nav.dd
