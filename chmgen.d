@@ -173,11 +173,16 @@ Nav loadNav(string fileName, string base)
 			if ("a" in obj)
 			{
 				url = absoluteUrl(base, obj["a"].str.strip());
-				if (!url.canFind(`://`))
+				if (url.canFind(`://`))
+				{
+					stderr.writeln("Skipping non-existing navigation item: " ~ url);
+					return null;
+				}
+				else
 				{
 					if (!exists(`chm\files\` ~ url))
 					{
-						stderr.writeln("Non-local or non-existing file in navigation: " ~ url);
+						stderr.writeln("Skipping non-existing navigation item: " ~ url);
 						//url = "http://dlang.org/" ~ url;
 						return null;
 					}
