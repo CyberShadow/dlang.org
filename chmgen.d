@@ -122,8 +122,8 @@ Nav loadNav(string fileName, string base)
 
 // ********************************************************************
 
-struct KeyLink { string anchor; }
-KeyLink[string][string] keywords;   // keywords[keyword][original url w/o anchor] = anchor/title
+struct KeyLink { string anchor; int confidence; }
+KeyLink[string][string] keywords;   // keywords[keyword][original url w/o anchor] = anchor/confidence
 
 void addKeyword(string keyword, string link, int confidence)
 {
@@ -136,8 +136,8 @@ void addKeyword(string keyword, string link, int confidence)
 
 	if (keyword !in keywords
 	 || file !in keywords[keyword]
-	 || (keywords[keyword][file].anchor > anchor /*&& !lowPriority*/)) // "less" is better
-		keywords[keyword][file] = KeyLink(anchor);
+	 || keywords[keyword][file].confidence < confidence)
+		keywords[keyword][file] = KeyLink(anchor, confidence);
 }
 
 Regex!char re(string pattern, alias flags = [])()
@@ -367,10 +367,13 @@ main="D Programming Language","d.hhc","d.hhk","files\index.html","files\index.ht
 	f.writeln("[");
 	foreach (keyword; keywordList)
 	{
-		auto urlList = keywords[keyword];
-		foreach (url, link; urlList)
+		static struct IndexEntry { string keyword; string[] urls; }
+		IndexEntry entry;
+		entry.keyword = keyword;
+		foreach (url, link; keywords[keyword])
 			if (url in pages)
-				f.writeln([keyword, adjustPath(url, `http://dlang.org`).replace(`\`, `/`) ~ link.anchor], ",");
+				entry.urls ~= adjustPath(url, `http://dlang.org`).replace(`\`, `/`) ~ link.anchor;
+		f.writeln(entry, ",");
 	}
 	f.writeln("]");
 	f.close();
