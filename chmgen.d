@@ -16,7 +16,13 @@ enum ROOT = `.`;
 
 // ********************************************************************
 
-string fixSlashes(string s)
+string forwardSlashes(string s)
+{
+	return s.replace(`\`, `/`);
+}
+
+//                   '  *  '
+string backSlashes(string s)
 {
 	return s.replace(`/`, `\`);
 }
@@ -36,28 +42,22 @@ string absoluteUrl(string base, string url)
 	if (url.canFind("://"))
 		return url;
 
-	base = base.fixSlashes();
-	url  = url.fixSlashes();
+	assert(!base.canFind('\\'), format("%s", [base, url]));
+	assert(!url .canFind('\\'));
 	enforce(url.length, "Empty URL");
 
 	if (url[0]=='#')
 		return base ~ url;
 
-	auto pathSegments = base.length ? base.split(`\`)[0..$-1] : null;
-	auto urlSegments = url.split(`\`);
+	auto pathSegments = base.length ? base.split(`/`)[0..$-1] : null;
+	auto urlSegments = url.split(`/`);
 
 	while (urlSegments.startsWith([`..`]))
 	{
 		urlSegments = urlSegments[1..$];
 		pathSegments = pathSegments[0..$-1];
 	}
-	return (pathSegments ~ urlSegments).join(`\`);
-}
-
-string adjustPath(string s, string prefix)
-{
-	enforce(s.startsWith(ROOT ~ `\`), "Bad path: " ~ s);
-	return prefix ~ s[ROOT.length..$];
+	return (pathSegments ~ urlSegments).join(`/`);
 }
 
 // ********************************************************************
@@ -104,14 +104,14 @@ Nav loadNav(string fileName, string base)
 					return null;
 				}
 				else
-				if (!exists(`chm\files\` ~ url))
+				if (!exists(`chm/files/` ~ url))
 				{
 					stderr.writeln("Skipping non-existent navigation item: " ~ url);
 					//url = "http://dlang.org/" ~ url;
 					return null;
 				}
 				else
-					nav.url = `files\` ~ url;
+					nav.url = `files\` ~ url.backSlashes();
 			}
 			return nav;
 		}
@@ -131,7 +131,7 @@ void addKeyword(string keyword, string link, int confidence)
 	if (!keyword.length)
 		return;
 	link = link.strip();
-	string file = link.stripAnchor().fixSlashes();
+	string file = link.stripAnchor();
 	string anchor = link.getAnchor();
 
 	if (keyword !in keywords
@@ -158,100 +158,93 @@ void main()
 {
 	if (exists(`chm`))
 		rmdirRecurse(`chm`);
-	mkdirRecurse(`chm\files`);
+	mkdirRecurse(`chm/files`);
 
-	enforce(exists(ROOT ~ `\phobos\index.html`),
+	enforce(exists(ROOT ~ `/phobos/index.html`),
 		`Phobos documentation not present. Please place Phobos documentation HTML files into the "phobos" subdirectory.`);
 
 	string[] files = chain(
-		dirEntries(ROOT ~ `\`       , "*.html", SpanMode.shallow),
-		dirEntries(ROOT ~ `\phobos\`, "*.html", SpanMode.shallow),
-	//	dirEntries(ROOT ~ `\js\`              , SpanMode.shallow),
-		dirEntries(ROOT ~ `\css\`             , SpanMode.shallow),
-		dirEntries(ROOT ~ `\images\`, "*.*"   , SpanMode.shallow),
-		only(ROOT ~ `\favicon.ico`)
+		dirEntries(ROOT ~ `/`       , "*.html", SpanMode.shallow),
+		dirEntries(ROOT ~ `/phobos/`, "*.html", SpanMode.shallow),
+	//	dirEntries(ROOT ~ `/js/`              , SpanMode.shallow),
+		dirEntries(ROOT ~ `/css/`             , SpanMode.shallow),
+		dirEntries(ROOT ~ `/images/`, "*.*"   , SpanMode.shallow),
+		only(ROOT ~ `/favicon.ico`)
 	).array();
 
 	foreach (fileName; files)
+	{
+		scope(failure) stderr.writeln("Error while processing file: ", fileName);
+
+		auto page = new Page;
+		fileName = page.fileName = fileName[ROOT.length+1 .. $].forwardSlashes();
+		pages[fileName] = page;
+
+		auto newFileName = `chm/files/` ~ fileName;
+		newFileName.dirName().mkdirRecurse();
+
+		if (fileName.endsWith(`.html`))
 		{
-			scope(failure) stderr.writeln("Error while processing file: ", fileName);
-			auto page = pages[fileName] = new Page;
-			page.fileName = fileName[ROOT.length+1 .. $];
+			stderr.writeln("Processing ", fileName);
+			auto src = fileName.readText();
 
-			auto newFileName = fileName.adjustPath(`chm\files`);
-			newFileName.dirName().mkdirRecurse();
+			// Find title
 
-			if (fileName.endsWith(`.html`))
-			{
-				stderr.writeln("Processing ", fileName);
-				auto src = fileName.readText();
+			foreach (m; src.match(re!`<title>(.*?) - D Programming Language</title>`))
+				page.title = m.captures[1];
 
-				// Find title
+			// Add document CSS class
 
-				foreach (m; src.match(re!`<title>(.*?) - D Programming Language</title>`))
-					page.title = m.captures[1];
+			src = src.replaceAll(re!`(<body id='.*?' class='.*?)('>)`, `\1 chm\2`);
 
-				// Add document CSS class
+			// Fix links
 
-				src = src.replaceAll(re!`(<body id='.*?' class='.*?)('>)`, `\1 chm\2`);
+			src = src.replace(`<a href="."`, `<a href="index.html"`);
+			src = src.replace(`<a href=".."`, `<a href="../index.html"`);
 
-				// Fix links
+			// Find anchors
 
-				src = src.replace(`<a href="."`, `<a href="index.html"`);
-				src = src.replace(`<a href=".."`, `<a href="..\index.html"`);
+			enum attrs = `(?:(?:\w+=\"[^"]*\")?\s*)*`;
+			enum name = `(?:name|id)`;
 
-				// Find anchors
+			foreach (m; src.matchAll(re!(`<a `~attrs~name~`="(\.?[^"]*)"`~attrs~`>(.*?)</a>`)))
+				addKeyword(m.captures[2].replaceAll(re!`<.*?>`, ``), fileName ~ "#" ~ m.captures[1], 5);
 
-				enum attrs = `(?:(?:\w+=\"[^"]*\")?\s*)*`;
-				enum name = `(?:name|id)`;
+			foreach (m; src.matchAll(re!(`<a `~attrs~name~`="(\.?([^"]*?)(\.\d+)?)"`~attrs~`>`)))
+				addKeyword(m.captures[2], fileName ~ "#" ~ m.captures[1], 1);
 
-				foreach (m; src.matchAll(re!(`<a `~attrs~name~`="(\.?[^"]*)"`~attrs~`>(.*?)</a>`)))
-					addKeyword(m.captures[2].replaceAll(re!`<.*?>`, ``), fileName ~ "#" ~ m.captures[1], 5);
+			foreach (m; src.matchAll(re!(`<div class="quickindex" id="(quickindex\.(.+?))"></div>`)))
+				addKeyword(m.captures[2], fileName ~ "#" ~ m.captures[1], 1);
 
-				foreach (m; src.matchAll(re!(`<a `~attrs~name~`="(\.?([^"]*?)(\.\d+)?)"`~attrs~`>`)))
-					addKeyword(m.captures[2], fileName ~ "#" ~ m.captures[1], 1);
+			foreach (m; src.matchAll(re!(`<a `~attrs~`href="([^"]*)"`~attrs~`>(.*?)</a>`)))
+				if (!m.captures[1].canFind("://"))
+					addKeyword(m.captures[2].replaceAll(re!`<.*?>`, ``), absoluteUrl(fileName, m.captures[1]), 4);
 
-				foreach (m; src.matchAll(re!(`<div class="quickindex" id="(quickindex\.(.+?))"></div>`)))
-					addKeyword(m.captures[2], fileName ~ "#" ~ m.captures[1], 1);
+			// Disable scripts
 
-				foreach (m; src.matchAll(re!(`<a `~attrs~`href="([^"]*)"`~attrs~`>(.*?)</a>`)))
-					if (!m.captures[1].canFind("://"))
-						addKeyword(m.captures[2].replaceAll(re!`<.*?>`, ``), absoluteUrl(fileName, m.captures[1]), 4);
+			src = src.replaceAll(re!`<script.*?</script>`, ``);
+			src = src.replaceAll(re!`<script.*?\bsrc=.*?>`, ``);
 
-				// Disable scripts
+			// Remove external stylesheets
 
-				src = src.replaceAll(re!`<script.*?</script>`, ``);
-				src = src.replaceAll(re!`<script.*?\bsrc=.*?>`, ``);
+			src = src.replaceAll(re!`<link rel="stylesheet" href="http.*?>`, ``);
 
-				// Remove external stylesheets
-
-				src = src.replaceAll(re!`<link rel="stylesheet" href="http.*?>`, ``);
-
-				std.file.write(newFileName, src);
-			}
-			else
-			{
-				stderr.writeln("Copying ", fileName);
-				copy(fileName, newFileName);
-			}
+			std.file.write(newFileName, src);
 		}
+		else
+		{
+			stderr.writeln("Copying ", fileName);
+			copy(fileName, newFileName);
+		}
+	}
 
 	// Load navigation
 
 	auto nav = loadNav("chm-nav-doc.json", ``);
 	auto phobosIndex = `files\phobos\index.html`;
 	auto navPhobos = nav.children.find!(child => child.url == phobosIndex).front;
-	auto phobos = loadNav("chm-nav-std.json", `phobos\`);
+	auto phobos = loadNav("chm-nav-std.json", `phobos/`);
 	navPhobos.children = phobos.children.filter!(child => child.url != phobosIndex).array();
-
-	// Retreive keyword link titles
-
-/*
-	foreach (keyNorm, urls; keywords)
-		foreach (url, ref link; urls)
-			if (url in pages)
-				link.title = pages[url].title;
-*/
 
 	// ************************************************************
 
@@ -277,9 +270,9 @@ main="D Programming Language","d.hhc","d.hhk","files\index.html","files\index.ht
 
 [FILES]`);
 	string[] htmlList;
-	foreach (page;pages)
+	foreach (page; pages)
 		if (page.fileName.endsWith(`.html`))
-			htmlList ~= `files\` ~ page.fileName;
+			htmlList ~= `files\` ~ page.fileName.backSlashes();
 	htmlList.sort();
 	foreach (s; htmlList)
 		f.writeln(s);
@@ -340,16 +333,15 @@ main="D Programming Language","d.hhc","d.hhk","files\index.html","files\index.ht
 <UL>`);
 	foreach (keyword; keywordList)
 	{
-		auto urlList = keywords[keyword];
 		f.writeln(
 `	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="`, keyword, `">`);
-		foreach (url, link; urlList)
+		foreach (url; keywords[keyword].keys.sort())
 			if (url in pages)
 			{
 				f.writeln(
 `		<param name="Name" value="`, pages[url].title, `">
-		<param name="Local" value="`, adjustPath(url, `files`), link.anchor, `">`);
+		<param name="Local" value="files\`, url.backSlashes(), keywords[keyword][url].anchor, `">`);
 			}
 		f.writeln(
 `		</OBJECT>`);
@@ -372,7 +364,7 @@ main="D Programming Language","d.hhc","d.hhk","files\index.html","files\index.ht
 		entry.keyword = keyword;
 		foreach (url, link; keywords[keyword])
 			if (url in pages)
-				entry.urls ~= adjustPath(url, `http://dlang.org`).replace(`\`, `/`) ~ link.anchor;
+				entry.urls ~= `http://dlang.org/` ~ url ~ link.anchor;
 		f.writeln(entry, ",");
 	}
 	f.writeln("]");
