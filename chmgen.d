@@ -68,16 +68,6 @@ class Nav
 	Nav[] children;
 }
 
-class Page
-{
-	string fileName, title, src;
-}
-
-struct KeyLink
-{
-	string anchor, title;
-}
-
 Nav loadNav(string fileName, string base)
 {
 	import std.json;
@@ -132,11 +122,10 @@ Nav loadNav(string fileName, string base)
 
 // ********************************************************************
 
-Page[string] pages;
+struct KeyLink { string anchor; }
 KeyLink[string][string] keywords;   // keywords[keyword][original url w/o anchor] = anchor/title
-string[string] keyTable;
 
-void addKeyword(string keyword, string link)
+void addKeyword(string keyword, string link, int confidence)
 {
 	keyword = keyword.strip();
 	if (!keyword.length)
@@ -147,12 +136,8 @@ void addKeyword(string keyword, string link)
 
 	if (keyword !in keywords
 	 || file !in keywords[keyword]
-	 || keywords[keyword][file].anchor > anchor) // "less" is better
+	 || (keywords[keyword][file].anchor > anchor /*&& !lowPriority*/)) // "less" is better
 		keywords[keyword][file] = KeyLink(anchor);
-
-	if (keyword !in keyTable
-	 || keyTable[keyword] > keyword) // "less" is better
-		keyTable[keyword] = keyword;
 }
 
 Regex!char re(string pattern, alias flags = [])()
@@ -162,6 +147,12 @@ Regex!char re(string pattern, alias flags = [])()
 		r = regex(pattern, flags);
 	return r;
 }
+
+class Page
+{
+	string fileName, title;
+}
+Page[string] pages;
 
 void main()
 {
@@ -193,70 +184,50 @@ void main()
 			if (fileName.endsWith(`.html`))
 			{
 				stderr.writeln("Processing ", fileName);
-				auto lines = fileName.readText().splitLines();
+				auto src = fileName.readText();
 
-				bool foundBody, redirect;
+				// Find title
 
-				foreach (ref line; lines)
-				{
-					scope(failure) stderr.writeln("Error while processing line: ", line);
+				foreach (m; src.match(re!`<title>(.*?) - D Programming Language</title>`))
+					page.title = m.captures[1];
 
-					RegexMatch!string m;
+				// Add document CSS class
 
-					// Find title
+				src = src.replaceAll(re!`(<body id='.*?' class='.*?)('>)`, `\1 chm\2`);
 
-					if (!!(m = line.match(re!`^<title>(.*) - D Programming Language</title>$`)))
-						page.title = m.captures[1];
+				// Fix links
 
-					// Add document CSS class
+				src = src.replace(`<a href="."`, `<a href="index.html"`);
+				src = src.replace(`<a href=".."`, `<a href="..\index.html"`);
 
-					if (!!(m = line.match(re!`^(<body id='.*' class='.*)('>)$`)))
-					{
-						line = m.captures[1] ~ " chm" ~ m.captures[2];
-						foundBody = true;
-					}
+				// Find anchors
 
-					if (line.match(re!`^<meta http-equiv="Refresh" content="0; URL=`))
-						redirect = true;
+				enum attrs = `(?:(?:\w+=\"[^"]*\")?\s*)*`;
+				enum name = `(?:name|id)`;
 
-					// Fix links
+				foreach (m; src.matchAll(re!(`<a `~attrs~name~`="(\.?[^"]*)"`~attrs~`>(.*?)</a>`)))
+					addKeyword(m.captures[2].replaceAll(re!`<.*?>`, ``), fileName ~ "#" ~ m.captures[1], 5);
 
-					line = line.replace(`<a href="."`, `<a href="index.html"`);
-					line = line.replace(`<a href=".."`, `<a href="..\index.html"`);
+				foreach (m; src.matchAll(re!(`<a `~attrs~name~`="(\.?([^"]*?)(\.\d+)?)"`~attrs~`>`)))
+					addKeyword(m.captures[2], fileName ~ "#" ~ m.captures[1], 1);
 
-					// Find anchors
+				foreach (m; src.matchAll(re!(`<div class="quickindex" id="(quickindex\.(.+?))"></div>`)))
+					addKeyword(m.captures[2], fileName ~ "#" ~ m.captures[1], 1);
 
-					enum attrs = `(?:(?:\w+=\"[^"]*\")?\s*)*`;
-					enum name = `(?:name|id)`;
-					if (!!(m = line.match(re!(`<a `~attrs~name~`="(\.?[^"]*)"`~attrs~`>(.*?)</a>`))))
-						addKeyword(m.captures[2].replaceAll(re!`<.*?>`, ``), fileName ~ "#" ~ m.captures[1]);
-					else
-					if (!!(m = line.match(re!(`<a `~attrs~name~`="(\.?([^"]*?)(\.\d+)?)"`~attrs~`>`))))
-						addKeyword(m.captures[2], fileName ~ "#" ~ m.captures[1]);
-					//<a class="anchor" title="Permalink to this section" id="integerliteral" href="#integerliteral">Integer Literals</a>
+				foreach (m; src.matchAll(re!(`<a `~attrs~`href="([^"]*)"`~attrs~`>(.*?)</a>`)))
+					if (!m.captures[1].canFind("://"))
+						addKeyword(m.captures[2].replaceAll(re!`<.*?>`, ``), absoluteUrl(fileName, m.captures[1]), 4);
 
-					if (!!(m = line.match(re!(`<div class="quickindex" id="(quickindex\.(.+))"></div>`))))
-						addKeyword(m.captures[2], fileName ~ "#" ~ m.captures[1]);
+				// Disable scripts
 
-					if (!!(m = line.match(re!(`<a `~attrs~`href="([^"]*)"`~attrs~`>(.*?)</a>`))))
-						if (!m.captures[1].canFind("://"))
-							addKeyword(m.captures[2].replaceAll(re!`<.*?>`, ``), absoluteUrl(fileName, m.captures[1]));
+				src = src.replaceAll(re!`<script.*?</script>`, ``);
+				src = src.replaceAll(re!`<script.*?\bsrc=.*?>`, ``);
 
-					// Disable scripts
+				// Remove external stylesheets
 
-					line = line.replaceAll(re!`<script.*</script>`, ``);
-					line = line.replaceAll(re!`<script.*\bsrc=`, ``);
+				src = src.replaceAll(re!`<link rel="stylesheet" href="http.*?>`, ``);
 
-					// Remove external stylesheets
-
-					if (line.startsWith(`<link rel="stylesheet" href="http`))
-						line = null;
-				}
-
-				enforce(foundBody || redirect, "Body not found");
-
-				page.src = lines.join("\r\n");
-				std.file.write(newFileName, page.src);
+				std.file.write(newFileName, src);
 			}
 			else
 			{
@@ -275,10 +246,12 @@ void main()
 
 	// Retreive keyword link titles
 
+/*
 	foreach (keyNorm, urls; keywords)
 		foreach (url, ref link; urls)
 			if (url in pages)
 				link.title = pages[url].title;
+*/
 
 	// ************************************************************
 
@@ -356,26 +329,26 @@ main="D Programming Language","d.hhc","d.hhk","files\index.html","files\index.ht
 	// Write index file
 
 	string[] keywordList;
-	foreach (keyNorm, urlList; keywords)
-		keywordList ~= keyNorm;
+	foreach (keyword, urlList; keywords)
+		keywordList ~= keyword;
 	//keywordList.sort;
-	keywordList.sort!q{icmp(a, b) < 0};
+	keywordList.multiSort!(q{icmp(a, b) < 0}, q{a < b});
 
 	f.open(`chm\d.hhk`, "wt");
 	f.writeln(
 `<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN"><HTML><BODY>
 <UL>`);
-	foreach (keyNorm; keywordList)
+	foreach (keyword; keywordList)
 	{
-		auto urlList = keywords[keyNorm];
+		auto urlList = keywords[keyword];
 		f.writeln(
 `	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="`, keyTable[keyNorm], `">`);
+		<param name="Name" value="`, keyword, `">`);
 		foreach (url, link; urlList)
 			if (url in pages)
 			{
 				f.writeln(
-`		<param name="Name" value="`, link.title, `">
+`		<param name="Name" value="`, pages[url].title, `">
 		<param name="Local" value="`, adjustPath(url, `files`), link.anchor, `">`);
 			}
 		f.writeln(
@@ -392,12 +365,12 @@ main="D Programming Language","d.hhc","d.hhk","files\index.html","files\index.ht
 
 	f.open(`d.tag`, "wt");
 	f.writeln("[");
-	foreach (keyNorm; keywordList)
+	foreach (keyword; keywordList)
 	{
-		auto urlList = keywords[keyNorm];
+		auto urlList = keywords[keyword];
 		foreach (url, link; urlList)
 			if (url in pages)
-				f.writeln([keyTable[keyNorm], adjustPath(url, `http://dlang.org`).replace(`\`, `/`) ~ link.anchor], ",");
+				f.writeln([keyword, adjustPath(url, `http://dlang.org`).replace(`\`, `/`) ~ link.anchor], ",");
 	}
 	f.writeln("]");
 	f.close();
