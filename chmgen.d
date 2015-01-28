@@ -22,7 +22,7 @@ enum ROOT = `.`;
 
 string fixSlashes(string s)
 {
-	return s.replace(`\`, `/`);
+	return s.replace(`/`, `\`);
 }
 
 /*
@@ -71,15 +71,15 @@ string absoluteUrl(string base, string url)
 	if (url[0]=='#')
 		return base ~ url;
 
-	auto pathSegments = base.split(`/`)[0..$-1];
-	auto urlSegments = url.split(`/`);
+	auto pathSegments = base.split(`\`)[0..$-1];
+	auto urlSegments = url.split(`\`);
 
 	while (urlSegments.startsWith([`..`]))
 	{
 		urlSegments = urlSegments[1..$];
 		pathSegments = pathSegments[0..$-1];
 	}
-	return (pathSegments ~ urlSegments).join(`/`);
+	return (pathSegments ~ urlSegments).join(`\`);
 }
 
 /*
@@ -92,7 +92,7 @@ string adjustPath(string s)
 */
 string adjustPath(string s)
 {
-	enforce(s.startsWith(ROOT ~ `/`), "Bad path: " ~ s);
+	enforce(s.startsWith(ROOT ~ `\`), "Bad path: " ~ s);
 	return "chm" ~ s[ROOT.length..$];
 }
 /*
@@ -188,16 +188,16 @@ void main()
 {
 	mkdirRecurse("chm");
 
-	enforce(exists(ROOT ~ `/phobos/index.html`),
-		"Phobos documentation not present. Please place Phobos documentation HTML files into the \"phobos\" subdirectory.");
+	enforce(exists(ROOT ~ `\phobos\index.html`),
+		`Phobos documentation not present. Please place Phobos documentation HTML files into the "phobos" subdirectory.`);
 
 	string[] files = chain(
-		dirEntries(ROOT ~ "/"       , "*.html", SpanMode.shallow),
-		dirEntries(ROOT ~ "/phobos/", "*.html", SpanMode.shallow),
-	//	dirEntries(ROOT ~ "/js/"              , SpanMode.shallow),
-		dirEntries(ROOT ~ "/css/"             , SpanMode.shallow),
-		dirEntries(ROOT ~ "/images/", "*.*"   , SpanMode.shallow),
-		only(ROOT ~ "/favicon.ico")
+		dirEntries(ROOT ~ `\`       , "*.html", SpanMode.shallow),
+		dirEntries(ROOT ~ `\phobos\`, "*.html", SpanMode.shallow),
+	//	dirEntries(ROOT ~ `\js\`              , SpanMode.shallow),
+		dirEntries(ROOT ~ `\css\`             , SpanMode.shallow),
+		dirEntries(ROOT ~ `\images\`, "*.*"   , SpanMode.shallow),
+		only(ROOT ~ `\favicon.ico`)
 	).array();
 
 /*
@@ -237,10 +237,10 @@ void main()
 //				anchors[""] = true;
 
 				Nav[] navStack = [nav];
-				if (fileName.startsWith(ROOT ~ `/phobos/`))
+				if (fileName.startsWith(ROOT ~ `\phobos\`))
 				{
 					navStack ~= navStack[$-1].findOrAdd("Documentation", null);
-					navStack ~= navStack[$-1].findOrAdd("Library Reference", `chm/phobos/index.html`);
+					navStack ~= navStack[$-1].findOrAdd("Library Reference", `chm\phobos\index.html`);
 					navStack ~= navStack[$-1].findOrAdd(null, null);
 				}
 				else
@@ -480,7 +480,7 @@ Compatibility=1.1 or later
 Compiled file=d.chm
 Contents file=d.hhc
 Default Window=main
-Default topic=chm/index.html
+Default topic=chm\index.html
 Display compile progress=No
 Full-text search=Yes
 Index file=d.hhk
@@ -488,7 +488,7 @@ Language=0x409 English (United States)
 Title=D
 
 [WINDOWS]
-main="D Programming Language","d.hhc","d.hhk","chm/index.html","chm/index.html",,,,,0x63520,,0x380e,[0,0,800,570],0x918f0000,,,,,,0
+main="D Programming Language","d.hhc","d.hhk","chm\index.html","chm\index.html",,,,,0x63520,,0x380e,[0,0,800,570],0x918f0000,,,,,,0
 
 [FILES]`);
 	string[] htmlList;
