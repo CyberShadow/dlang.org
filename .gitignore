@@ -11,11 +11,8 @@ GNUmakefile
 Thumbs.db
 
 # CHM
-chm
+/chm
 *.chm
-*.hhk
-*.hhc
-*.hhp
 *.exe
 *.obj
 

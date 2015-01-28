@@ -93,7 +93,7 @@ string adjustPath(string s)
 string adjustPath(string s)
 {
 	enforce(s.startsWith(ROOT ~ `\`), "Bad path: " ~ s);
-	return "chm" ~ s[ROOT.length..$];
+	return `chm\files` ~ s[ROOT.length..$];
 }
 /*
 bool ignoreNav(string href)
@@ -132,7 +132,7 @@ class Nav
 Nav nav;
 class Page
 {
-	string newFileName, title, src;
+	string fileName, title, src;
 }
 
 struct KeyLink
@@ -186,7 +186,7 @@ Regex!char re(string pattern, alias flags = [])()
 
 void main()
 {
-	mkdirRecurse("chm");
+	mkdirRecurse(`chm\files`);
 
 	enforce(exists(ROOT ~ `\phobos\index.html`),
 		`Phobos documentation not present. Please place Phobos documentation HTML files into the "phobos" subdirectory.`);
@@ -219,18 +219,19 @@ void main()
 	nav = new Nav(null, null);
 
 	foreach (fileName; files)
-		with (pages[fileName] = new Page)
+		//with (pages[fileName] = new Page)
 		{
 			scope(failure) stderr.writeln("Error while processing file: ", fileName);
+			auto page = pages[fileName] = new Page;
+			page.fileName = fileName[ROOT.length+1 .. $];
 
-			newFileName = fileName.adjustPath();
+			auto newFileName = fileName.adjustPath();
 			newFileName.dirName().mkdirRecurse();
 
 			if (fileName.endsWith(`.html`))
 			{
 				stderr.writeln("Processing ", fileName);
-				src = fileName.readText();
-				string[] lines = src.splitLines();
+				auto lines = fileName.readText().splitLines();
 //				string[] newlines = null;
 //				bool skip, innavblock, intoctop;
 //				int dl = 0;
@@ -240,7 +241,7 @@ void main()
 				if (fileName.startsWith(ROOT ~ `\phobos\`))
 				{
 					navStack ~= navStack[$-1].findOrAdd("Documentation", null);
-					navStack ~= navStack[$-1].findOrAdd("Library Reference", `chm\phobos\index.html`);
+					navStack ~= navStack[$-1].findOrAdd("Library Reference", `files\phobos\index.html`);
 					navStack ~= navStack[$-1].findOrAdd(null, null);
 				}
 				else
@@ -251,6 +252,12 @@ void main()
 				foreach (ref line; lines)
 				{
 					scope(failure) stderr.writeln("Error while processing line: ", line);
+
+					// Fix links
+
+					line = line.replace(`<a href="."`, `<a href="index.html"`);
+					line = line.replace(`<a href=".."`, `<a href="..\index.html"`);
+
 				//	string line = origLine;
 				//	bool nextSkip = skip;
 
@@ -276,7 +283,7 @@ void main()
 					// Find title
 
 					if (!!(m = line.match(re!`^<title>(.*) - D Programming Language</title>$`)))
-						title = m.captures[1];
+						page.title = m.captures[1];
 
 				//	if (line.test(re_anchor_1h))
 				//	{
@@ -434,8 +441,8 @@ void main()
 			//		stderr.writeln("Warning: Page not found in navigation");
 
 			//	src = join(newlines, std.ascii.newline[]);
-				src = lines.join("\r\n");
-				std.file.write(newFileName, src);
+				page.src = lines.join("\r\n");
+				std.file.write(newFileName, page.src);
 			}
 		/*
 			else
@@ -472,7 +479,7 @@ void main()
 
 	// ************************************************************
 
-	auto f = File("d.hhp", "wt");
+	auto f = File(`chm\d.hhp`, "wt");
 	f.writeln(
 `[OPTIONS]
 Binary Index=No
@@ -480,7 +487,7 @@ Compatibility=1.1 or later
 Compiled file=d.chm
 Contents file=d.hhc
 Default Window=main
-Default topic=chm\index.html
+Default topic=files\index.html
 Display compile progress=No
 Full-text search=Yes
 Index file=d.hhk
@@ -488,13 +495,13 @@ Language=0x409 English (United States)
 Title=D
 
 [WINDOWS]
-main="D Programming Language","d.hhc","d.hhk","chm\index.html","chm\index.html",,,,,0x63520,,0x380e,[0,0,800,570],0x918f0000,,,,,,0
+main="D Programming Language","d.hhc","d.hhk","files\index.html","files\index.html",,,,,0x63520,,0x380e,[0,0,800,570],0x918f0000,,,,,,0
 
 [FILES]`);
 	string[] htmlList;
 	foreach (page;pages)
-		if (page.newFileName.endsWith(`.html`))
-			htmlList ~= page.newFileName;
+		if (page.fileName.endsWith(`.html`))
+			htmlList ~= `files\` ~ page.fileName;
 	htmlList.sort();
 	foreach (s; htmlList)
 		f.writeln(s);
@@ -527,7 +534,7 @@ main="D Programming Language","d.hhc","d.hhk","chm\index.html","chm\index.html",
 			dumpNav(child, level);
 	}
 
-	f.open("d.hhc", "wt");
+	f.open(`chm\d.hhc`, "wt");
 	f.writeln(
 `<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN"><HTML><BODY>
 <OBJECT type="text/site properties"><param name="Window Styles" value="0x800025"></OBJECT>
@@ -545,7 +552,7 @@ main="D Programming Language","d.hhc","d.hhk","chm\index.html","chm\index.html",
 	//keywordList.sort;
 	keywordList.sort!q{icmp(a, b) < 0};
 
-	f.open("d.hhk", "wt");
+	f.open(`chm\d.hhk`, "wt");
 	f.writeln(
 `<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN"><HTML><BODY>
 <UL>`);
