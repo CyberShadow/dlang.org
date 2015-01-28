@@ -386,5 +386,21 @@ main="D Programming Language","d.hhc","d.hhk","files\index.html","files\index.ht
 </BODY></HTML>`);
 	f.close();
 
+	// ************************************************************
+
+	// Write tag file (for dman)
+
+	f.open(`d.tag`, "wt");
+	f.writeln("[");
+	foreach (keyNorm; keywordList)
+	{
+		auto urlList = keywords[keyNorm];
+		foreach (url, link; urlList)
+			if (url in pages)
+				f.writeln([keyTable[keyNorm], adjustPath(url, `http://dlang.org`).replace(`\`, `/`) ~ link.anchor], ",");
+	}
+	f.writeln("]");
+	f.close();
+
 	// Done!
 }
