@@ -606,6 +606,11 @@ body.chm div#tools
 	margin-right: 0;
 }
 
+body.chm dt.d_decl
+{
+	width: 100%;
+}
+
 span#wiki
 {
 	position: relative;

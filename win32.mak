@@ -1,5 +1,7 @@
 # makefile to build html files for DMD
 
+LATEST=prerelease
+
 DMD=dmd
 DPL_DOCS_PATH=dpl-docs
 DPL_DOCS=$(DPL_DOCS_PATH)\dpl-docs.exe
@@ -26,7 +28,7 @@ SPECSRC=spec.dd intro.dd lex.dd grammar.dd module.dd declaration.dd type.dd prop
 
 DDOC=macros.ddoc html.ddoc dlang.org.ddoc windows.ddoc doc.ddoc $(NODATETIME)
 
-DDOC_STD=std.ddoc std_navbar-prerelease.ddoc
+DDOC_STD=std.ddoc std_navbar-$(LATEST).ddoc
 
 ASSETS=images\*.* css\*.*
 IMG=dmlogo.gif cpp1.gif d002.ico c1.gif d3.png d4.gif d5.gif favicon.gif
@@ -259,12 +261,6 @@ windows.html : $(DDOC) windows.ddoc windows.dd
 css/cssmenu.css : $(DDOC) css/cssmenu.css.dd
 	$(DMD) -o- -c -Df$@ $(DDOC) css/cssmenu.css.dd
 
-chm-nav-doc.json : $(DDOC) chm-nav.dd
-	$(DMD) -o- -c -Df$@ $(DDOC) chm-nav.dd
-
-chm-nav-std.json : $(DDOC) $(DDOC_STD) chm-nav.dd
-	$(DMD) -o- -c -Df$@ $(DDOC) $(DDOC_STD) chm-nav.dd
-
 ################ Ebook ########################
 
 dlangspec.d : $(SPECSRC) win32.mak
@@ -288,11 +284,17 @@ chm : d.chm
 chmgen.exe : chmgen.d
 	$(DMD) chmgen
 
-d.hhp d.hhc d.hhk : chmgen.exe $(TARGETS)
+d.hhp d.hhc d.hhk : chmgen.exe chm-nav-doc.json chm-nav-std.json $(TARGETS)
 	chmgen
 
 d.chm : d.hhp d.hhc d.hhk
 	-cmd /C ""$(HHC)" d.hhp"
+
+chm-nav-doc.json : $(DDOC) chm-nav.dd
+	$(DMD) -o- -c -Df$@ $(DDOC) chm-nav.dd
+
+chm-nav-std.json : $(DDOC) $(DDOC_STD) chm-nav.dd
+	$(DMD) -o- -c -Df$@ $(DDOC) $(DDOC_STD) chm-nav.dd
 
 ################# Other #########################
 
