@@ -6,6 +6,7 @@
 import std.algorithm;
 import std.exception;
 import std.file;
+import std.getopt;
 import std.range;
 import std.stdio : File, stderr;
 import std.string;
@@ -13,52 +14,6 @@ import std.regex;
 import std.path;
 
 enum ROOT = `.`;
-
-// ********************************************************************
-
-string forwardSlashes(string s)
-{
-	return s.replace(`\`, `/`);
-}
-
-//                   '  *  '
-string backSlashes(string s)
-{
-	return s.replace(`/`, `\`);
-}
-
-string getAnchor(string s)
-{
-	return s.findSplitBefore("#")[1];
-}
-
-string stripAnchor(string s)
-{
-	return s.findSplit("#")[0];
-}
-
-string absoluteUrl(string base, string url)
-{
-	if (url.canFind("://"))
-		return url;
-
-	assert(!base.canFind('\\'), format("%s", [base, url]));
-	assert(!url .canFind('\\'));
-	enforce(url.length, "Empty URL");
-
-	if (url[0]=='#')
-		return base ~ url;
-
-	auto pathSegments = base.length ? base.split(`/`)[0..$-1] : null;
-	auto urlSegments = url.split(`/`);
-
-	while (urlSegments.startsWith([`..`]))
-	{
-		urlSegments = urlSegments[1..$];
-		pathSegments = pathSegments[0..$-1];
-	}
-	return (pathSegments ~ urlSegments).join(`/`);
-}
 
 // ********************************************************************
 
@@ -120,10 +75,13 @@ Nav loadNav(string fileName, string base)
 	return parseNav(json);
 }
 
+Nav nav;
+
 // ********************************************************************
 
 struct KeyLink { string anchor; int confidence; }
 KeyLink[string][string] keywords;   // keywords[keyword][original url w/o anchor] = anchor/confidence
+string[] keywordList; // Sorted alphabetically, case-insensitive
 
 void addKeyword(string keyword, string link, int confidence)
 {
@@ -140,25 +98,30 @@ void addKeyword(string keyword, string link, int confidence)
 		keywords[keyword][file] = KeyLink(anchor, confidence);
 }
 
-Regex!char re(string pattern, alias flags = [])()
-{
-	static Regex!char r;
-	if (r.empty)
-		r = regex(pattern, flags);
-	return r;
-}
-
 class Page
 {
 	string fileName, title;
 }
 Page[string] pages;
 
-void main()
+// ********************************************************************
+
+void main(string[] args)
 {
-	if (exists(`chm`))
-		rmdirRecurse(`chm`);
-	mkdirRecurse(`chm/files`);
+	bool onlyTags;
+
+	getopt(args,
+		"only-tags", &onlyTags,
+	);
+
+	bool chm = !onlyTags;
+
+	if (chm)
+	{
+		if (exists(`chm`))
+			rmdirRecurse(`chm`);
+		mkdirRecurse(`chm/files`);
+	}
 
 	enforce(exists(ROOT ~ `/phobos/index.html`),
 		`Phobos documentation not present. Please place Phobos documentation HTML files into the "phobos" subdirectory.`);
@@ -229,26 +192,53 @@ void main()
 
 			src = src.replaceAll(re!`<link rel="stylesheet" href="http.*?>`, ``);
 
-			std.file.write(newFileName, src);
+			if (chm)
+				std.file.write(newFileName, src);
 		}
 		else
 		{
-			stderr.writeln("Copying ", fileName);
-			copy(fileName, newFileName);
+			if (chm)
+			{
+				stderr.writeln("Copying ", fileName);
+				copy(fileName, newFileName);
+			}
 		}
 	}
 
-	// Load navigation
+	foreach (keyword, urlList; keywords)
+		keywordList ~= keyword;
+	keywordList.multiSort!(q{icmp(a, b) < 0}, q{a < b});
 
-	auto nav = loadNav("chm-nav-doc.json", ``);
+
+	if (chm)
+	{
+		loadNavigation();
+		writeCHM();
+	}
+
+	writeTags();
+
+	stderr.writeln("Done!");
+}
+
+// ************************************************************
+
+void loadNavigation()
+{
+	stderr.writeln("Loading navigation");
+
+	nav = loadNav("chm-nav-doc.json", ``);
 	auto phobosIndex = `files\phobos\index.html`;
 	auto navPhobos = nav.children.find!(child => child.url == phobosIndex).front;
 	auto phobos = loadNav("chm-nav-std.json", `phobos/`);
 	navPhobos.children = phobos.children.filter!(child => child.url != phobosIndex).array();
+}
 
-	// ************************************************************
+// ************************************************************
 
-	// Write project file
+void writeCHM()
+{
+	stderr.writeln("Writing project file");
 
 	auto f = File(`chm\d.hhp`, "wt");
 	f.writeln(
@@ -282,7 +272,7 @@ main="D Programming Language","d.hhc","d.hhk","files\index.html","files\index.ht
 
 	// ************************************************************
 
-	// Write TOC file
+	stderr.writeln("Writing TOC file");
 
 	void dumpNav(Nav nav, int level=0)
 	{
@@ -319,13 +309,7 @@ main="D Programming Language","d.hhc","d.hhk","files\index.html","files\index.ht
 
 	// ************************************************************
 
-	// Write index file
-
-	string[] keywordList;
-	foreach (keyword, urlList; keywords)
-		keywordList ~= keyword;
-	//keywordList.sort;
-	keywordList.multiSort!(q{icmp(a, b) < 0}, q{a < b});
+	stderr.writeln("Writing index file");
 
 	f.open(`chm\d.hhk`, "wt");
 	f.writeln(
@@ -350,11 +334,15 @@ main="D Programming Language","d.hhc","d.hhk","files\index.html","files\index.ht
 `</UL>
 </BODY></HTML>`);
 	f.close();
+}
 
-	// ************************************************************
+// ************************************************************
 
-	// Write tag file (for dman)
+void writeTags()
+{
+	stderr.writeln("Writing tags file");
 
+	File f;
 	f.open(`d.tag`, "wt");
 	f.writeln("[");
 	foreach (keyword; keywordList)
@@ -369,6 +357,58 @@ main="D Programming Language","d.hhc","d.hhk","files\index.html","files\index.ht
 	}
 	f.writeln("]");
 	f.close();
+}
 
-	// Done!
+// ********************************************************************
+
+string forwardSlashes(string s)
+{
+	return s.replace(`\`, `/`);
+}
+
+//                   '  *  '
+string backSlashes(string s)
+{
+	return s.replace(`/`, `\`);
+}
+
+string getAnchor(string s)
+{
+	return s.findSplitBefore("#")[1];
+}
+
+string stripAnchor(string s)
+{
+	return s.findSplit("#")[0];
+}
+
+string absoluteUrl(string base, string url)
+{
+	if (url.canFind("://"))
+		return url;
+
+	assert(!base.canFind('\\'), format("%s", [base, url]));
+	assert(!url .canFind('\\'));
+	enforce(url.length, "Empty URL");
+
+	if (url[0]=='#')
+		return base ~ url;
+
+	auto pathSegments = base.length ? base.split(`/`)[0..$-1] : null;
+	auto urlSegments = url.split(`/`);
+
+	while (urlSegments.startsWith([`..`]))
+	{
+		urlSegments = urlSegments[1..$];
+		pathSegments = pathSegments[0..$-1];
+	}
+	return (pathSegments ~ urlSegments).join(`/`);
+}
+
+Regex!char re(string pattern, alias flags = [])()
+{
+	static Regex!char r;
+	if (r.empty)
+		r = regex(pattern, flags);
+	return r;
 }
