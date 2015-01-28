@@ -15,6 +15,7 @@ Thumbs.db
 *.chm
 *.exe
 *.obj
+*.json
 
 dlangspec.d
 

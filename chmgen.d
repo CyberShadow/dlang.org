@@ -116,7 +116,7 @@ class Nav
 		this.title = title;
 		this.url   = url;
 	}
-
+/*
 	Nav findOrAdd(string title, string url)
 	{
 		title = title.strip();
@@ -127,9 +127,9 @@ class Nav
 		children ~= child;
 		return child;
 	}
+*/
 }
 
-Nav nav;
 class Page
 {
 	string fileName, title, src;
@@ -149,12 +149,15 @@ struct KeyLink
 Nav loadNav(string fileName, string base)
 {
 	import std.json;
-	auto json = fileName
+	auto text = fileName
 		.readText()
 		.replace("\r", "")
 		.replace("\n", "")
-		.replaceAll(re!`,\s*\]`, "]")
-		.parseJSON();
+	//	.replaceAll(re!`/\*.*?\*/`, "")
+		.replaceAll(re!`,\s*\]`, `]`)
+	;
+	scope(failure) std.file.write("error.json", text);
+	auto json = text.parseJSON();
 
 	Nav parseNav(JSONValue json)
 	{
@@ -162,7 +165,7 @@ Nav loadNav(string fileName, string base)
 		{
 			auto nodes = json.array;
 			auto root = parseNav(nodes[0]);
-			root.children = nodes[1..$].map!parseNav.filter!`a`.array();
+			root.children = nodes[1..$].map!parseNav.array().filter!`a`.array();
 			return root;
 		}
 		else
@@ -175,20 +178,18 @@ Nav loadNav(string fileName, string base)
 				url = absoluteUrl(base, obj["a"].str.strip());
 				if (url.canFind(`://`))
 				{
-					stderr.writeln("Skipping non-existing navigation item: " ~ url);
+					stderr.writeln("Skipping external navigation item: " ~ url);
 					return null;
 				}
 				else
+				if (!exists(`chm\files\` ~ url))
 				{
-					if (!exists(`chm\files\` ~ url))
-					{
-						stderr.writeln("Skipping non-existing navigation item: " ~ url);
-						//url = "http://dlang.org/" ~ url;
-						return null;
-					}
-					else
-						url = `files\` ~ url;
+					stderr.writeln("Skipping non-existent navigation item: " ~ url);
+					//url = "http://dlang.org/" ~ url;
+					return null;
 				}
+				else
+					url = `files\` ~ url;
 			}
 			return new Nav(title, url);
 		}
@@ -206,8 +207,7 @@ string[string] keyTable;
 void addKeyword(string keyword, string link, string title = null)
 {
 	keyword = keyword.strip();
-	string file = link.stripAnchor();
-	file = file.fixSlashes();
+	string file = link.stripAnchor().fixSlashes();
 	string anchor = link.getAnchor();
 
 	if (!title && keyword in keywords && file in keywords[keyword])   // when title is present, it overrides any existing anchors/etc.
@@ -424,19 +424,30 @@ void main()
 
 					// Find anchors
 
-					if (!!(m = line.match(re!`<a name="(\.?[^"]*)">(<\w{1,2}>)*([^<]+)<`)))
-						addKeyword(m.captures[3], fileName ~ "#" ~ m.captures[1]);
+					enum attrs = `(?:(?:\w+=\"[^"]*\")?\s*)*`;
+					enum name = `(?:name|id)`;
+					if (!!(m = line.match(re!(`<a `~attrs~name~`="(\.?[^"]*)"`~attrs~`>(.*?)</a>`))))
+						addKeyword(m.captures[2].replaceAll(re!`<.*?>`, ``), fileName ~ "#" ~ m.captures[1]);
 					else
-					if (!!(m = line.match(re!`<a name="(\.?([^"]*))">`)))
+					if (!!(m = line.match(re!(`<a `~attrs~name~`="(\.?([^"]*?)(\.\d+)?)"`~attrs~`>`))))
+						addKeyword(m.captures[2], fileName ~ "#" ~ m.captures[1]);
+					//<a class="anchor" title="Permalink to this section" id="integerliteral" href="#integerliteral">Integer Literals</a>
+
+					if (!!(m = line.match(re!(`<div class="quickindex" id="(quickindex\.(.+))"></div>`))))
 						addKeyword(m.captures[2], fileName ~ "#" ~ m.captures[1]);
 
-					if (!!(m = line.match(re!`<a href="([^"]*)">(<\w{1,2}>)*([^<]+)<`)))
+					if (!!(m = line.match(re!(`<a `~attrs~`href="([^"]*)"`~attrs~`>(<\w{1,2}>)*([^<]+)<`))))
 						if (!m.captures[1].canFind("://"))
 							addKeyword(m.captures[3], absoluteUrl(fileName, m.captures[1]));
 
 					// Disable scripts
 
-					if (line.match(`<script.*</script>`) || line.match(`<script.*\bsrc=`))
+					line = line.replaceAll(re!`<script.*</script>`, ``);
+					line = line.replaceAll(re!`<script.*\bsrc=`, ``);
+
+					// Remove external stylesheets
+
+					if (line.startsWith(`<link rel="stylesheet" href="http`))
 						line = null;
 
 				/+
@@ -520,7 +531,11 @@ void main()
 			}
 		}
 
-	nav = loadNav("chm-nav-doc.json", ``);
+	auto nav = loadNav("chm-nav-doc.json", ``);
+	auto phobosIndex = `files\phobos\index.html`;
+	auto navPhobos = nav.children.find!(child => child.url == phobosIndex).front;
+	auto phobos = loadNav("chm-nav-std.json", `phobos\`);
+	navPhobos.children = phobos.children.filter!(child => child.url != phobosIndex).array();
 
 	// ************************************************************
 
