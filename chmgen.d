@@ -209,6 +209,7 @@ void main(string[] args)
 		keywordList ~= keyword;
 	keywordList.multiSort!(q{icmp(a, b) < 0}, q{a < b});
 
+	lint();
 
 	if (chm)
 	{
@@ -232,6 +233,19 @@ void loadNavigation()
 	auto navPhobos = nav.children.find!(child => child.url == phobosIndex).front;
 	auto phobos = loadNav("chm-nav-std.json", `phobos/`);
 	navPhobos.children = phobos.children.filter!(child => child.url != phobosIndex).array();
+}
+
+// ************************************************************
+
+void lint()
+{
+	bool[string] unknownUrls;
+	foreach (keyword; keywordList)
+		foreach (url, link; keywords[keyword])
+			if (url !in pages)
+				unknownUrls[url] = true;
+	foreach (url; unknownUrls.keys.sort())
+		stderr.writeln("Warning: Unknown URL: " ~ url);
 }
 
 // ************************************************************
