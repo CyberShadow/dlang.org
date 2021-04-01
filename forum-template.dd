@@ -11,6 +11,8 @@ BODYCLASS = forum <?bodyclass?>
 SEARCHDEFAULT_FORUM = selected
 LAYOUT_SUFFIX=
 <script type="text/javascript" src="<?static:/js/dfeed.js?>"></script>
+<link rel="stylesheet" href="<?static:/css/highlight-js.css?>">
+<script src="<?static:/js/highlight.js?>"></script>
 _=
 TITLE=
 FULL_TITLE=<?title?> - D Programming Language Discussion Forum
