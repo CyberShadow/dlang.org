@@ -89,7 +89,6 @@ $(GNAME StorageClasses):
 $(GNAME StorageClass):
 $(MULTICOLS 5,     $(GLINK2 attribute, LinkageAttribute)
     $(GLINK2 attribute, AlignAttribute)
-    $(D deprecated)
     $(D enum)
     $(D static)
     $(RELATIVE_LINK2 extern, $(D extern))
