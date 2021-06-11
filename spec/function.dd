@@ -105,7 +105,7 @@ $(GNAME FunctionBody):
     $(GLINK ShortenedFunctionBody)
 
 $(GNAME FunctionLiteralBody):
-    $(GLINK SpecifiedFunctionBody)
+    $(GLINK BlockStatement)
 
 $(GNAME SpecifiedFunctionBody):
     $(D do)$(OPT) $(GLINK2 statement, BlockStatement)
