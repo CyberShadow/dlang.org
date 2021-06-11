@@ -217,7 +217,7 @@ $(H2 $(LEGACY_LNAME2 DeclarationStatement, declaration-statement, Declaration St
 
 $(GRAMMAR
 $(GNAME DeclarationStatement):
-    $(GLINK2 declaration, StorageClasses)$(OPT) $(GLINK2 declaration, Declaration)
+    $(GLINK2 declaration, Declaration)
 )
 
         $(P Some declaration statements:)
