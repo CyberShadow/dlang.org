@@ -250,7 +250,7 @@ $(GNAME AssignExpression):
     $(GLINK ConditionalExpression) $(D |=) $(GSELF AssignExpression)
     $(GLINK ConditionalExpression) $(D ^=) $(GSELF AssignExpression)
     $(GLINK ConditionalExpression) $(D ~=) $(GSELF AssignExpression)
-    $(GLINK ConditionalExpression) $(D <)$(D <)$(D =) $(GSELF AssignExpression)
+    $(GLINK ConditionalExpression) $(D $(LT)$(LT)=) $(GSELF AssignExpression)
     $(GLINK ConditionalExpression) $(D >>=) $(GSELF AssignExpression)
     $(GLINK ConditionalExpression) $(D >>>=) $(GSELF AssignExpression)
     $(GLINK ConditionalExpression) $(D ^^=) $(GSELF AssignExpression)
