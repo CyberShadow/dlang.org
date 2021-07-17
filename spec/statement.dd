@@ -1848,8 +1848,8 @@ $(GNAME AsmStatement):
     $(D asm) $(GLINK2 function, FunctionAttributes)$(OPT) $(D {) $(GLINK AsmInstructionList)$(OPT) $(D })
 
 $(GNAME AsmInstructionList):
-    $(GLINK2 iasm, AsmInstruction) $(D ;)
-    $(GLINK2 iasm, AsmInstruction) $(D ;) $(GSELF AsmInstructionList)
+    $(GLINK2 iasm, AsmInstruction)$(OPT) $(D ;)
+    $(GLINK2 iasm, AsmInstruction)$(OPT) $(D ;) $(GSELF AsmInstructionList)
 )
 
 $(P An asm statement enables the direct use of assembly language instructions.

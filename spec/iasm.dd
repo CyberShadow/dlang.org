@@ -35,8 +35,8 @@ $(GNAME AsmStatement):
     $(D asm) $(GLINK2 function, FunctionAttributes)$(OPT) $(D {) $(GLINK AsmInstructionList)$(OPT) $(D })
 
 $(GNAME AsmInstructionList):
-    $(GLINK AsmInstruction) $(D ;)
-    $(GLINK AsmInstruction) $(D ;) $(GSELF AsmInstructionList)
+    $(GLINK AsmInstruction)$(OPT) $(D ;)
+    $(GLINK AsmInstruction)$(OPT) $(D ;) $(GSELF AsmInstructionList)
 )
 
     $(P Assembler instructions must be located inside an `asm` block.
@@ -1251,8 +1251,8 @@ $(GNAME GccAsmStatement):
     $(D asm) $(GLINK2 function, FunctionAttributes)$(OPT) $(D {) $(GLINK GccAsmInstructionList) $(D })
 
 $(GNAME GccAsmInstructionList):
-    $(GLINK GccAsmInstruction) $(D ;)
-    $(GLINK GccAsmInstruction) $(D ;) $(GSELF GccAsmInstructionList)
+    $(GLINK GccAsmInstruction)$(OPT) $(D ;)
+    $(GLINK GccAsmInstruction)$(OPT) $(D ;) $(GSELF GccAsmInstructionList)
 
 $(GNAME GccAsmInstruction):
     $(GLINK GccBasicAsmInstruction)
