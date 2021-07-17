@@ -471,6 +471,7 @@ $(GNAME AsmBrExp):
 
 $(GNAME AsmUnaExp):
     $(GLINK AsmTypePrefix) $(GLINK AsmExp)
+    $(D [) $(GLINK AsmExp) $(D ])
     $(D offsetof) $(GLINK AsmExp)
     $(D seg) $(GLINK AsmExp)
     $(D +) $(GSELF AsmUnaExp)
