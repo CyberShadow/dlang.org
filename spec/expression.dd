@@ -1619,6 +1619,7 @@ $(GNAME AssocArrayLiteral):
 
 $(GNAME KeyValuePairs):
     $(GLINK KeyValuePair)
+    $(GLINK KeyValuePair) $(D ,)
     $(GLINK KeyValuePair) $(D ,) $(GSELF KeyValuePairs)
 
 $(GNAME KeyValuePair):
