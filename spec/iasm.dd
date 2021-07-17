@@ -62,7 +62,7 @@ $(H2 $(LNAME2 asminstruction, Asm instruction))
 
 $(GRAMMAR
 $(GNAME AsmInstruction):
-    $(GLINK_LEX Identifier) $(D :) $(GSELF AsmInstruction)
+    $(GLINK_LEX Identifier) $(D :) $(GSELF AsmInstruction)$(OPT)
     $(D align) $(GLINK IntegerExpression)
     $(D even)
     $(D naked)
