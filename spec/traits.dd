@@ -15,6 +15,7 @@ $(HEADERNAV_TOC)
 
 $(GRAMMAR
 $(GNAME TraitsExpression):
+    $(D __traits) $(D $(LPAREN)) $(GLINK TraitsKeyword) $(D $(RPAREN))
     $(D __traits) $(D $(LPAREN)) $(GLINK TraitsKeyword) $(D ,) $(GLINK TraitsArguments) $(D $(RPAREN))
 
 $(GNAME TraitsKeyword):
