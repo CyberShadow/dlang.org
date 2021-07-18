@@ -12,6 +12,7 @@ $(GNAME Declaration):
     $(GLINK AliasAssign)
     $(GLINK2 struct, AggregateDeclaration)
     $(GLINK2 enum, EnumDeclaration)
+    $(GLINK2 template, TemplateDeclaration)
     $(GLINK2 module, ImportDeclaration)
     $(GLINK2 version, ConditionalDeclaration)
     $(GLINK2 version, StaticForeachDeclaration)
