@@ -8,6 +8,7 @@ STATIC = <?static:/dlang.org/$1?>
 ROOT=https://dlang.org
 ROOT_DIR=https://dlang.org/
 BODYCLASS = forum <?bodyclass?>
+LI_CLASS = <li$1>$+</li>
 SEARCHDEFAULT_FORUM = selected
 LAYOUT_SUFFIX=
 <script type="text/javascript" src="<?static:/js/dfeed.js?>"></script>
@@ -45,12 +46,12 @@ $(SUBNAV_TEMPLATE
     )
     $(UL
         $(LI <?category1?> $(UL
-            $(LI $(LINK2 <?url1?>, <?title1?>))
-            $(LI $(LINK2 <?url2?>, <?title2?>))
+            $(LI_CLASS <?class1?>, $(LINK2 <?url1?>, <?title1?>))
+            $(LI_CLASS <?class2?>, $(LINK2 <?url2?>, <?title2?>))
         ))
         $(LI <?category2?> $(UL
-            $(LI $(LINK2 <?url1?>, <?title1?>))
-            $(LI $(LINK2 <?url2?>, <?title2?>))
+            $(LI_CLASS <?class1?>, $(LINK2 <?url1?>, <?title1?>))
+            $(LI_CLASS <?class2?>, $(LINK2 <?url2?>, <?title2?>))
         ))
     )
 )
