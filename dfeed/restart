@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -eu
+
+# Navigate to DFeed root (this script lives in site/web/static/dlang.org/dfeed/)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/../../../../.."
+
+while [ `date +%S` -lt 57 ]; do
+    SECOND=`date +%S`
+    echo -ne Restarting in `expr 58 - $SECOND` ... '\r'
+    sleep 1
+done
+echo "Restarting now!           "
+
+pkill dfeed

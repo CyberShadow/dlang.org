@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -eux
+
+# Navigate to DFeed root (this script lives in site/web/static/dlang.org/dfeed/)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/../../../../.."
+DFEED_ROOT="$(pwd)"
+
+git pull
+
+git submodule update --init --recursive
+
+# Update dlang.org content (not a submodule, lives in site/)
+git -C site/web/static/dlang.org pull --ff-only
+
+# Build using Nix
+"$SCRIPT_DIR/rebuild-nix"
+
+# Restart
+"$SCRIPT_DIR/restart"

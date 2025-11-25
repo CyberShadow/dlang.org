@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -eu
+
+# Navigate to DFeed root (this script lives in site/web/static/dlang.org/dfeed/)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/../../../../.."
+DFEED_ROOT="$(pwd)"
+
+# Source Nix environment if available
+if [ -e /etc/profile.d/nix.sh ]; then
+    source /etc/profile.d/nix.sh
+fi
+
+# Build the dlang.org site flake
+echo "Building dlang.org site configuration..."
+SITE_RESULT=$(nix --extra-experimental-features 'nix-command flakes' build "path:$DFEED_ROOT/site/web/static/dlang.org" --override-input dfeed "git+file://$DFEED_ROOT" --print-out-paths)
+
+# Build DFeed
+echo "Building DFeed..."
+DFEED_RESULT=$(nix --extra-experimental-features 'nix-command flakes' build "git+file://$DFEED_ROOT" --print-out-paths)
+
+# Copy binaries
+echo "Copying binaries..."
+cp -f "$DFEED_RESULT"/bin/* ./
+chmod +x ./dfeed ./generate-dlang-docs 2>/dev/null || true
+
+# Sync site-defaults
+echo "Syncing site-defaults..."
+rsync -a --chmod=u+w "$DFEED_RESULT/share/dfeed/site-defaults/" site-defaults/
+
+# Copy dlang.org site resources
+echo "Copying dlang.org site resources..."
+mkdir -p site/config site/web/static/dlang.org/css site/web/static/dlang.org/js
+
+cp -f "$SITE_RESULT/site/config/groups.ini" site/config/
+cp -f "$SITE_RESULT/site/web/skel.htt" site/web/
+cp -f "$SITE_RESULT/site/web/static/dlang.org/css"/*.min.css site/web/static/dlang.org/css/
+cp -f "$SITE_RESULT/site/web/static/dlang.org/js"/*.min.js site/web/static/dlang.org/js/
+cp -f "$SITE_RESULT/site/web/static/dlang.org/forum-template.html" site/web/static/dlang.org/
+
+# Copy forum favicon
+mkdir -p site/web/static
+cp -f "site/web/static/dlang.org/dfeed/favicon.ico" site/web/static/favicon.ico
+
+echo "Build complete!"
