@@ -26,7 +26,7 @@ chmod +x ./dfeed ./generate-dlang-docs 2>/dev/null || true
 
 # Sync site-defaults
 echo "Syncing site-defaults..."
-rsync -a --chmod=u+w "$DFEED_RESULT/share/dfeed/site-defaults/" site-defaults/
+rsync -a --no-times --chmod=u+w "$DFEED_RESULT/share/dfeed/site-defaults/" site-defaults/
 
 # Copy dlang.org site resources
 echo "Copying dlang.org site resources..."
