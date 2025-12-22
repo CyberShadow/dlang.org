@@ -61,6 +61,7 @@ git push -v github github/next:master && ssh dfeed@k3.1azy.net DFeed/site/web/st
 | [`restart`](restart) | Restart the dfeed process |
 | | |
 | [`../forum-template.dd`](../forum-template.dd) | Page template (compiled to `skel.htt`) |
+| [`../flake.nix`](../flake.nix) | Nix build for forum resources |
 | [`../css/style.css`](../css/style.css) | Main stylesheet |
 | [`../js/dlang.js`](../js/dlang.js) | Main JavaScript |
 | [`../dlang.org.ddoc`](../dlang.org.ddoc) | DDOC macros for site-wide styling |
