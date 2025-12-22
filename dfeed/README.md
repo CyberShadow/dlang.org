@@ -54,11 +54,16 @@ git push -v github github/next:master && ssh dfeed@k3.1azy.net DFeed/site/web/st
 
 | File | Purpose |
 |------|---------|
-| `gengroups.d` | Generates `groups.ini` with D forum/mailing list configuration |
-| `rebuild-nix` | Build script using Nix flakes |
-| `update` | Pull and deploy (stable branch) |
-| `update-beta` | Reset to next branch and deploy |
-| `restart` | Restart the dfeed process |
+| [`gengroups.d`](gengroups.d) | Generates `groups.ini` with D forum/mailing list configuration |
+| [`rebuild-nix`](rebuild-nix) | Build script using Nix flakes |
+| [`update`](update) | Pull and deploy (stable branch) |
+| [`update-beta`](update-beta) | Reset to next branch and deploy |
+| [`restart`](restart) | Restart the dfeed process |
+| | |
+| [`../forum-template.dd`](../forum-template.dd) | Page template (compiled to `skel.htt`) |
+| [`../css/style.css`](../css/style.css) | Main stylesheet |
+| [`../js/dlang.js`](../js/dlang.js) | Main JavaScript |
+| [`../dlang.org.ddoc`](../dlang.org.ddoc) | DDOC macros for site-wide styling |
 
 ## Flake
 
