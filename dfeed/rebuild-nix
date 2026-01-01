@@ -13,7 +13,8 @@ fi
 
 # Build the dlang.org site flake
 echo "Building dlang.org site configuration..."
-SITE_RESULT=$(nix --extra-experimental-features 'nix-command flakes' build "path:$DFEED_ROOT/site/web/static/dlang.org" --override-input dfeed "git+file://$DFEED_ROOT" --print-out-paths)
+DLANG_ORG_DIR="$DFEED_ROOT/site/web/static/dlang.org"
+SITE_RESULT=$(nix --extra-experimental-features 'nix-command flakes' build "path:$DLANG_ORG_DIR/dfeed" --override-input dfeed "git+file://$DFEED_ROOT" --override-input dlang-org-src "path:$DLANG_ORG_DIR" --print-out-paths)
 
 # Build DFeed
 echo "Building DFeed..."

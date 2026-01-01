@@ -2,14 +2,20 @@
   description = "DFeed site configuration for forum.dlang.org";
 
   inputs = {
-    # Reference to the main DFeed flake (4 levels up from this flake)
-    dfeed.url = "path:../../../..";
+    # Reference to the main DFeed flake (5 levels up from this flake)
+    dfeed.url = "path:../../../../..";
     # Follow dfeed's nixpkgs to use its locked version
     nixpkgs.follows = "dfeed/nixpkgs";
     flake-utils.follows = "dfeed/flake-utils";
+    # Parent directory containing dlang.org source files (non-flake input)
+    # Placeholder - overridden by rebuild-nix at build time
+    dlang-org-src = {
+      url = "path:..";
+      flake = false;
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils, dfeed }:
+  outputs = { self, nixpkgs, flake-utils, dfeed, dlang-org-src }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
@@ -34,8 +40,8 @@
           pname = "dfeed-dlang-site";
           version = "unstable";
 
-          # Use self to get only git-tracked files from the dlang.org repo
-          src = self;
+          # Use dlang-org-src input (parent directory) to get the full repo
+          src = dlang-org-src;
 
           nativeBuildInputs = with pkgs; [
             dmd

@@ -54,6 +54,7 @@ git push -v github github/next:master && ssh dfeed@k3.1azy.net DFeed/site/web/st
 
 | File | Purpose |
 |------|---------|
+| [`flake.nix`](flake.nix) | Nix flake for building forum resources |
 | [`gengroups.d`](gengroups.d) | Generates `groups.ini` with D forum/mailing list configuration |
 | [`rebuild-nix`](rebuild-nix) | Build script using Nix flakes |
 | [`update`](update) | Pull and deploy (stable branch) |
@@ -61,14 +62,16 @@ git push -v github github/next:master && ssh dfeed@k3.1azy.net DFeed/site/web/st
 | [`restart`](restart) | Restart the dfeed process |
 | | |
 | [`../forum-template.dd`](../forum-template.dd) | Page template (compiled to `skel.htt`) |
-| [`../flake.nix`](../flake.nix) | Nix build for forum resources |
 | [`../css/style.css`](../css/style.css) | Main stylesheet |
 | [`../js/dlang.js`](../js/dlang.js) | Main JavaScript |
 | [`../dlang.org.ddoc`](../dlang.org.ddoc) | DDOC macros for site-wide styling |
 
 ## Flake
 
-The parent directory (`dlang.org/`) contains `flake.nix` which builds:
+The `flake.nix` in this directory builds:
 - `groups.ini` from `gengroups.d`
 - `forum-template.html` from dlang.org DDOC macros
 - Minified CSS and JS files
+
+It uses a non-flake input (`dlang-org-src`) to access the parent dlang.org
+directory. The `rebuild-nix` script overrides this input at build time.
