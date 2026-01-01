@@ -2,10 +2,11 @@
   description = "DFeed site configuration for forum.dlang.org";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
     # Reference to the main DFeed flake (4 levels up from this flake)
     dfeed.url = "path:../../../..";
+    # Follow dfeed's nixpkgs to use its locked version
+    nixpkgs.follows = "dfeed/nixpkgs";
+    flake-utils.follows = "dfeed/flake-utils";
   };
 
   outputs = { self, nixpkgs, flake-utils, dfeed }:
