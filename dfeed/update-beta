@@ -14,7 +14,9 @@ git reset --hard origin/next
 git submodule update --init --recursive
 
 # Update dlang.org content (not a submodule, lives in site/)
-git -C site/web/static/dlang.org pull --ff-only || git -C site/web/static/dlang.org fetch
+git -C site/web/static/dlang.org fetch
+git -C site/web/static/dlang.org stash save
+git -C site/web/static/dlang.org reset --hard origin/dfeed
 
 # Build using Nix
 "$SCRIPT_DIR/rebuild-nix"
