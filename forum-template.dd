@@ -27,6 +27,7 @@ HYPHENATE=
 COMMON_SCRIPTS_DLANG=
 COMMON_HEADERS_DLANG=
 FAVICON = <?static:/favicon.ico?>
+META_DESCRIPTION = <?metadescription?>
 _=
 
 FOOTER=
